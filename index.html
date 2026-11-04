@@ -187,7 +187,7 @@
 
   <section class="step">
     <h2>Imprimer</h2>
-    <p class="hint" style="margin-top:0">Ouvre le .3mf dans Bambu Studio, OrcaSlicer ou PrusaSlicer : la peinture multicolore est déjà appliquée, il te reste à associer les filaments 1, 2, 3… Imprime la face décorée contre le plateau texturé pour un beau fini. Pour les clips, préfère le PETG ou l'ABS/ASA au PLA.</p>
+    <p class="hint" style="margin-top:0">Ouvre le .3mf dans Bambu Studio, OrcaSlicer ou PrusaSlicer : la peinture multicolore est déjà appliquée. Bambu affiche « not from Bambu Lab, load geometry data and color data only » : c'est normal, les couleurs sont chargées et les filaments manquants sont ajoutés, il te reste à régler leurs couleurs. Imprime la face décorée contre le plateau texturé pour un beau fini. Pour les clips, préfère le PETG ou l'ABS/ASA au PLA.</p>
   </section>
 </aside>
 
@@ -495,7 +495,12 @@ function build3MFFiles(mesh, ext, colors, opts) {
     'xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" ' +
     'xmlns:slic3rpe="http://schemas.slic3r.org/3mf/2017/06">\n' +
     '<metadata name="Title">' + (opts.title || "Coque PS5 Slim personnalisée") + '</metadata>\n' +
-    '<metadata name="Application">Atelier Coque PS5 Slim</metadata>\n<resources>\n');
+    // Bambu Studio / OrcaSlicer n'importent la peinture multi-filament d'un 3MF tiers que s'il est au
+    // format PrusaSlicer (attribut slic3rpe:mmu_segmentation) : on se déclare donc compatible PrusaSlicer.
+    '<metadata name="Application">PrusaSlicer-2.8.1</metadata>\n' +
+    '<metadata name="Designer">Atelier Coque PS5 Slim</metadata>\n' +
+    '<metadata name="slic3rpe:Version3mf">1</metadata>\n' +
+    '<metadata name="slic3rpe:MmPaintingVersion">1</metadata>\n<resources>\n');
   if (opts.materials) {
     out.push('<basematerials id="1">\n');
     for (let i = 1; i < colors.length; i++) out.push('<base name="Filament ' + i + '" displaycolor="' + colors[i].toUpperCase() + 'FF"/>\n');
@@ -535,7 +540,8 @@ function readmeText(colors, counts, sizeMM) {
   s += "Dimensions : " + sizeMM.map(v => v.toFixed(1)).join(" x ") + " mm\r\n\r\nFilaments à charger (dans cet ordre) :\r\n";
   for (let i = 1; i < colors.length; i++) s += "  Filament " + i + " : " + colors[i].toUpperCase() + (i === 1 ? "  (couleur de la coque)" : "") + "  —  " + (counts[i] || 0) + " triangles\r\n";
   s += "\r\nOuvre le fichier .3mf dans Bambu Studio, OrcaSlicer ou PrusaSlicer.\r\n" +
-    "La peinture multicolore est déjà appliquée : choisis les couleurs des filaments 1 à " + (colors.length - 1) + " dans le slicer.\r\n";
+    "La peinture multicolore est déjà appliquée. Bambu Studio affiche « The 3mf is not from Bambu Lab, load geometry data and color data only » : c'est normal,\r\n" +
+    "les couleurs sont bien chargées. Il ajoute les filaments manquants : règle leurs couleurs selon la liste ci-dessus.\r\n";
   return s;
 }
 
