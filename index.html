@@ -174,8 +174,8 @@
           <option value="1.2">1,2 mm — rapide</option>
           <option value="2">2 mm — brouillon</option>
         </select></div>
-      <div class="field"><span>Couleurs 3MF standard</span>
-        <select id="mat"><option value="0" selected>Non (conseillé)</option><option value="1">Oui (aperçu Windows)</option></select></div>
+      <div class="field"><span>Slicer</span>
+        <select id="mode"><option value="bambu" selected>Bambu Studio 2.9+</option><option value="prusa">Orca / Prusa / Bambu &lt; 2.9</option></select></div>
     </div>
     <div style="margin-top:12px"><button class="btn primary" id="gen" disabled>Générer la 3D</button></div>
     <div class="progress" id="prog"><div></div></div>
@@ -187,7 +187,7 @@
 
   <section class="step">
     <h2>Imprimer</h2>
-    <p class="hint" style="margin-top:0">Ouvre le .3mf dans Bambu Studio, OrcaSlicer ou PrusaSlicer : la peinture multicolore est déjà appliquée. Bambu affiche « not from Bambu Lab, load geometry data and color data only » : c'est normal, les couleurs sont chargées et les filaments manquants sont ajoutés, il te reste à régler leurs couleurs. Imprime la face décorée contre le plateau texturé pour un beau fini. Pour les clips, préfère le PETG ou l'ABS/ASA au PLA.</p>
+    <p class="hint" style="margin-top:0"><b>Bambu Studio 2.9+</b> : à l'ouverture, une fenêtre montre tes couleurs exactes ; associe chacune à un filament et valide. <b>Orca, Prusa ou Bambu plus ancien</b> : la peinture est appliquée mais les filaments arrivent avec des couleurs au hasard, règle-les selon les pastilles F1, F2… Imprime la face décorée contre le plateau texturé pour un beau fini. Pour les clips, préfère le PETG ou l'ABS/ASA au PLA.</p>
   </section>
 </aside>
 
@@ -491,17 +491,23 @@ function build3MFFiles(mesh, ext, colors, opts) {
   opts = opts || {};
   const f = v => { const r = Math.round(v * 1e4) / 1e4; return Object.is(r, -0) ? "0" : String(r); };
   const out = [];
+  // mode "bambu" : couleurs 3MF standard (basematerials) -> Bambu Studio 2.9+ ouvre sa fenêtre
+  //   d'import des couleurs avec les teintes exactes.
+  // mode "prusa" : peinture multi-filament au format PrusaSlicer (Orca, Prusa, Bambu < 2.9) ;
+  //   la peinture est conservée mais le slicer choisit lui-même les couleurs des filaments.
+  const prusa = opts.mode === "prusa";
   out.push('<?xml version="1.0" encoding="UTF-8"?>\n<model unit="millimeter" xml:lang="fr-FR" ' +
     'xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" ' +
     'xmlns:slic3rpe="http://schemas.slic3r.org/3mf/2017/06">\n' +
     '<metadata name="Title">' + (opts.title || "Coque PS5 Slim personnalisée") + '</metadata>\n' +
     // Bambu Studio / OrcaSlicer n'importent la peinture multi-filament d'un 3MF tiers que s'il est au
     // format PrusaSlicer (attribut slic3rpe:mmu_segmentation) : on se déclare donc compatible PrusaSlicer.
-    '<metadata name="Application">PrusaSlicer-2.8.1</metadata>\n' +
-    '<metadata name="Designer">Atelier Coque PS5 Slim</metadata>\n' +
-    '<metadata name="slic3rpe:Version3mf">1</metadata>\n' +
-    '<metadata name="slic3rpe:MmPaintingVersion">1</metadata>\n<resources>\n');
-  if (opts.materials) {
+    (prusa ? '<metadata name="Application">PrusaSlicer-2.8.1</metadata>\n' +
+      '<metadata name="slic3rpe:Version3mf">1</metadata>\n' +
+      '<metadata name="slic3rpe:MmPaintingVersion">1</metadata>\n'
+      : '<metadata name="Application">Atelier Coque PS5 Slim</metadata>\n') +
+    '<metadata name="Designer">Atelier Coque PS5 Slim</metadata>\n<resources>\n');
+  if (!prusa) {
     out.push('<basematerials id="1">\n');
     for (let i = 1; i < colors.length; i++) out.push('<base name="Filament ' + i + '" displaycolor="' + colors[i].toUpperCase() + 'FF"/>\n');
     out.push('</basematerials>\n<object id="2" type="model" name="Coque PS5 Slim" pid="1" pindex="0">\n');
@@ -518,8 +524,10 @@ function build3MFFiles(mesh, ext, colors, opts) {
   for (let t = 0; t < nT; t++) {
     let s = '<triangle v1="' + tri[t * 3] + '" v2="' + tri[t * 3 + 1] + '" v3="' + tri[t * 3 + 2] + '"';
     const e = ext[t];
-    if (opts.materials) s += ' p1="' + (e - 1) + '"';
-    if (e > 1) { const pc = paintCode(e); s += ' paint_color="' + pc + '" slic3rpe:mmu_segmentation="' + pc + '"'; }
+    if (e > 1) {
+      if (prusa) { const pc = paintCode(e); s += ' slic3rpe:mmu_segmentation="' + pc + '" paint_color="' + pc + '"'; }
+      else s += ' p1="' + (e - 1) + '"';
+    }
     buf.push(s + '/>');
     if (buf.length >= 20000) { out.push(buf.join("\n") + "\n"); buf = []; }
   }
@@ -535,13 +543,16 @@ function build3MFFiles(mesh, ext, colors, opts) {
   };
 }
 
-function readmeText(colors, counts, sizeMM) {
+function readmeText(colors, counts, sizeMM, mode) {
   let s = "ATELIER COQUE — PS5 SLIM\r\n========================\r\n\r\n";
   s += "Dimensions : " + sizeMM.map(v => v.toFixed(1)).join(" x ") + " mm\r\n\r\nFilaments à charger (dans cet ordre) :\r\n";
   for (let i = 1; i < colors.length; i++) s += "  Filament " + i + " : " + colors[i].toUpperCase() + (i === 1 ? "  (couleur de la coque)" : "") + "  —  " + (counts[i] || 0) + " triangles\r\n";
-  s += "\r\nOuvre le fichier .3mf dans Bambu Studio, OrcaSlicer ou PrusaSlicer.\r\n" +
-    "La peinture multicolore est déjà appliquée. Bambu Studio affiche « The 3mf is not from Bambu Lab, load geometry data and color data only » : c'est normal,\r\n" +
-    "les couleurs sont bien chargées. Il ajoute les filaments manquants : règle leurs couleurs selon la liste ci-dessus.\r\n";
+  if (mode === "prusa") s += "\r\nFormat : peinture multi-filament (OrcaSlicer, PrusaSlicer, Bambu Studio avant 2.9).\r\n" +
+    "La peinture est déjà appliquée ; le slicer ajoute les filaments manquants avec des couleurs au hasard :\r\n" +
+    "règle-les selon la liste ci-dessus.\r\n";
+  else s += "\r\nFormat : Bambu Studio 2.9 ou plus récent.\r\n" +
+    "À l'ouverture, Bambu Studio affiche une fenêtre d'import des couleurs avec tes teintes :\r\n" +
+    "associe chaque couleur à un filament (ou crée-le), puis valide. La coque est peinte automatiquement.\r\n";
   return s;
 }
 
@@ -900,7 +911,7 @@ $("dl").onclick = async () => {
   try {
     const cols = extColors();
     const fname = "ps5-slim-" + (BUILTIN[S.src] ? S.src : S.src === "stl" ? "coque-perso" : "plaque-test");
-    const files = build3MFFiles(S.refined, S.ext, cols, { materials: $("mat").value === "1", title: "PS5 Slim — " + (BUILTIN[S.src] || "coque personnalisée") });
+    const files = build3MFFiles(S.refined, S.ext, cols, { mode: $("mode").value, title: "PS5 Slim — " + (BUILTIN[S.src] || "coque personnalisée") });
     const z = {};
     for (const k in files) { const v = files[k]; z[k] = strToU8(Array.isArray(v) ? v.join("") : v); }
     const threeMF = zipSync(z, { level: 6 });
@@ -908,7 +919,7 @@ $("dl").onclick = async () => {
     const dn = await getDownloads();
     if (dn) {
       // l'hébergeur n'accepte pas l'extension .3mf : on l'emballe dans un .zip
-      const pack = zipSync({ [fname + ".3mf"]: [threeMF, { level: 0 }], "LISEZMOI.txt": strToU8(readmeText(cols, counts, S.refined ? S.base.size : [0, 0, 0])) });
+      const pack = zipSync({ [fname + ".3mf"]: [threeMF, { level: 0 }], "LISEZMOI.txt": strToU8(readmeText(cols, counts, S.base.size, $("mode").value)) });
       await dn.save({ filename: fname + ".zip", data: new Blob([pack]) });
       $("dlMsg").className = "msg ok"; $("dlMsg").textContent = "Téléchargé : dézippe pour récupérer " + fname + ".3mf.";
     } else {
