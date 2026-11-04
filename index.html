@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atelier Coque — PS5 Slim</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c0e13; --panel:#13161d; --panel2:#191d26; --line:#252a35; --text:#e8eaf0; --muted:#8a91a3;
+    --accent:#3d7bff; --accent2:#6ea0ff; --ok:#38c793; --warn:#ffb547; --err:#ff6b6b; --r:12px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/1.45 Inter,system-ui,sans-serif}
+  button,input,select{font:inherit;color:inherit}
+  .app{display:grid;grid-template-columns:360px 1fr;height:100vh}
+  aside{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding:18px 18px 40px}
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+  .brand .logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#9b6bff);display:grid;place-items:center;font-weight:700}
+  .brand h1{font-size:17px;margin:0;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:12.5px;margin:0 0 16px}
+  section.step{background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:12px}
+  .step h2{font-size:13px;margin:0 0 10px;display:flex;align-items:center;gap:8px;text-transform:uppercase;letter-spacing:.06em;color:#cfd4e0}
+  .step h2 .n{width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:11px}
+  .row{display:flex;gap:8px;align-items:center;margin:8px 0}
+  .row label{flex:1;color:var(--muted);font-size:12.5px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .field{display:flex;flex-direction:column;gap:4px}
+  .field span{color:var(--muted);font-size:11.5px}
+  input[type=number],select{background:#0f1218;border:1px solid var(--line);border-radius:8px;padding:7px 9px;width:100%}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  input[type=color]{width:34px;height:28px;border:1px solid var(--line);border-radius:6px;background:none;padding:2px;cursor:pointer}
+  .seg{display:flex;background:#0f1218;border:1px solid var(--line);border-radius:9px;padding:3px;gap:3px}
+  .seg button{flex:1;border:0;background:none;padding:7px 6px;border-radius:7px;cursor:pointer;color:var(--muted);font-size:12.5px}
+  .seg button.on{background:var(--accent);color:#fff}
+  .btn{border:1px solid var(--line);background:#1d2230;border-radius:9px;padding:8px 12px;cursor:pointer;font-size:13px}
+  .btn:hover{border-color:#3a4254}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;width:100%;padding:11px}
+  .btn.primary:hover{background:var(--accent2)}
+  .btn.go{background:var(--ok);border-color:var(--ok);color:#06231a;font-weight:700;width:100%;padding:11px}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .parts{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .parts button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;background:#0f1218;border:1px solid var(--line);border-radius:9px;padding:8px 10px;cursor:pointer}
+  .parts button b{font-size:12.5px;font-weight:600}
+  .parts button span{font-size:11px;color:var(--muted)}
+  .parts button.on{border-color:var(--accent);background:#16203a;box-shadow:0 0 0 1px var(--accent) inset}
+  .parts button:hover{border-color:#3a4254}
+  .drop{border:1.5px dashed #343b4b;border-radius:10px;padding:16px;text-align:center;color:var(--muted);cursor:pointer;transition:.15s}
+  .drop:hover,.drop.over{border-color:var(--accent);color:var(--text);background:#151b29}
+  .drop img{max-width:100%;max-height:110px;border-radius:6px;display:block;margin:0 auto 6px}
+  .hint{color:var(--muted);font-size:12px;margin:6px 0 0}
+  .note{font-size:12px;border-radius:8px;padding:8px 10px;margin-top:8px;background:#1a2133;color:#b9c6e6;border:1px solid #26314b}
+  .note.warn{background:#2a2214;border-color:#4a3a1a;color:#f3d29a}
+  .slots{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+  .slot{display:flex;align-items:center;gap:8px;background:#0f1218;border:1px solid var(--line);border-radius:8px;padding:5px 8px}
+  .slot .pct{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);width:46px;text-align:right}
+  .slot .nm{flex:1;font-size:12.5px}
+  .slot label{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:4px;cursor:pointer}
+  .tag{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent2)}
+  main{position:relative;display:flex;flex-direction:column;min-width:0}
+  .tabs{display:flex;gap:4px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--panel);align-items:center}
+  .tabs button{border:0;background:none;padding:8px 14px;border-radius:8px;color:var(--muted);cursor:pointer;font-weight:500}
+  .tabs button.on{background:var(--panel2);color:var(--text)}
+  .tabs .spacer{flex:1}
+  .stats{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted)}
+  .view{position:absolute;inset:53px 0 0 0;display:none}
+  .view.on{display:block}
+  canvas{display:block;width:100%;height:100%}
+  #c2d{cursor:grab;touch-action:none}
+  #c2d.drag{cursor:grabbing}
+  .overlay{position:absolute;left:14px;bottom:14px;background:rgba(19,22,29,.88);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:12px;color:var(--muted);backdrop-filter:blur(6px)}
+  .badge{position:absolute;right:14px;top:14px;background:var(--warn);color:#2a1d00;font-weight:600;font-size:12px;border-radius:999px;padding:5px 11px;display:none}
+  .progress{height:6px;background:#0f1218;border-radius:4px;overflow:hidden;margin-top:10px;display:none}
+  .progress div{height:100%;width:0;background:linear-gradient(90deg,var(--accent),#9b6bff);transition:width .2s}
+  .msg{font-size:12.5px;margin-top:8px;min-height:18px}
+  .msg.err{color:var(--err)} .msg.ok{color:var(--ok)}
+  .filaments{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .fil{display:flex;align-items:center;gap:5px;font-size:11.5px;background:#0f1218;border:1px solid var(--line);border-radius:999px;padding:3px 9px 3px 4px}
+  .fil i{width:14px;height:14px;border-radius:50%;display:inline-block;border:1px solid #fff3}
+  .hidden{display:none!important}
+  @media (max-width:860px){
+    .app{grid-template-columns:1fr;grid-template-rows:auto 70vh;height:auto}
+    aside{border-right:0;border-bottom:1px solid var(--line)}
+    main{height:70vh}
+  }
+</style>
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+  "fflate":"https://cdn.jsdelivr.net/npm/fflate@0.8.2/esm/browser.js"
+}}
+</script>
+</head>
+<body>
+<div class="app">
+<aside>
+  <div class="brand"><div class="logo">◐</div><h1>Atelier Coque · PS5 Slim</h1></div>
+  <p class="sub">Ton image → une coque multicolore prête à imprimer (.3mf).</p>
+
+  <section class="step">
+    <h2><span class="n">1</span>La coque</h2>
+    <div class="parts" id="parts">
+      <button data-v="petite-logo" class="on"><b>Petite coque</b><span>avec logo · 216×160</span></button>
+      <button data-v="petite"><b>Petite coque</b><span>sans logo · 217×160</span></button>
+      <button data-v="grande-fente"><b>Grande coque</b><span>avec fente · 229×217</span></button>
+      <button data-v="grande"><b>Grande coque</b><span>222×218</span></button>
+      <button data-v="demo"><b>Plaque de test</b><span>paramétrique</span></button>
+      <button data-v="stl"><b>Mon STL</b><span>importer</span></button>
+    </div>
+    <div id="demoBox" class="hidden">
+      <div class="grid2" style="margin-top:10px">
+        <div class="field"><span>Longueur (mm)</span><input type="number" id="dL" value="340" min="50" max="450"></div>
+        <div class="field"><span>Largeur (mm)</span><input type="number" id="dW" value="190" min="50" max="300"></div>
+        <div class="field"><span>Épaisseur (mm)</span><input type="number" id="dT" value="2.4" step="0.2" min="1" max="6"></div>
+        <div class="field"><span>Rayon d'angle (mm)</span><input type="number" id="dR" value="14" min="0" max="60"></div>
+        <div class="field"><span>Bombé (mm)</span><input type="number" id="dC" value="4" step="0.5" min="0" max="20"></div>
+      </div>
+      <div class="note">Plaque simplifiée sans clips, uniquement pour tester les couleurs.</div>
+    </div>
+    <div id="stlBox" class="hidden">
+      <div class="drop" id="stlDrop" style="margin-top:10px">Dépose un fichier <b>.stl</b> ici ou clique</div>
+      <input type="file" id="stlIn" accept=".stl" class="hidden">
+      <div class="grid2" style="margin-top:10px">
+        <div class="field"><span>Face à décorer</span>
+          <select id="face"><option value="+Z">Dessus (+Z)</option><option value="-Z">Dessous (−Z)</option><option value="+X">+X</option><option value="-X">−X</option><option value="+Y">+Y</option><option value="-Y">−Y</option></select></div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px"><label>Orientation de la coque</label><button class="btn" id="spin">↻ Tourner 90°</button></div>
+    <div class="msg" id="baseInfo"></div>
+  </section>
+
+  <section class="step">
+    <h2><span class="n">2</span>Ton image</h2>
+    <div class="drop" id="imgDrop"><span id="imgDropTxt">Dépose une image (PNG, JPG…) ou clique</span></div>
+    <input type="file" id="imgIn" accept="image/*" class="hidden">
+    <p class="hint">Les dessins à aplats de couleurs donnent le meilleur rendu. La transparence d'un PNG garde la couleur de la coque.</p>
+  </section>
+
+  <section class="step">
+    <h2><span class="n">3</span>Couleurs</h2>
+    <div class="row"><label>Nombre de couleurs de l'image</label><b id="kVal" class="tag">4</b></div>
+    <input type="range" id="k" min="1" max="7" value="4">
+    <div class="row"><label>Couleur de la coque (filament 1)</label><input type="color" id="baseColor" value="#f1f1f3"></div>
+    <div class="row"><label>Lisser les petits détails</label><input type="checkbox" id="smooth" checked></div>
+    <div class="slots" id="slots"></div>
+    <p class="hint">Change chaque pastille pour la couleur exacte de ton filament. « = coque » fusionne une couleur avec le fond (souvent utile pour le blanc ou le noir de fond).</p>
+  </section>
+
+  <section class="step">
+    <h2><span class="n">4</span>Placement</h2>
+    <div class="row"><label>Largeur de l'image</label><b class="tag" id="wVal">–</b></div>
+    <input type="range" id="w" min="20" max="450" step="1" value="200">
+    <div class="row"><label>Rotation</label><b class="tag" id="rVal">0°</b></div>
+    <input type="range" id="rot" min="-180" max="180" step="1" value="0">
+    <div class="row">
+      <button class="btn" id="center">Centrer</button>
+      <button class="btn" id="fit">Ajuster</button>
+      <button class="btn" id="cover">Couvrir</button>
+      <button class="btn" id="r90">↻ 90°</button>
+    </div>
+    <p class="hint">Dans l'onglet Placement : glisse l'image pour la déplacer, molette pour la redimensionner.</p>
+  </section>
+
+  <section class="step">
+    <h2><span class="n">5</span>Générer & exporter</h2>
+    <div class="grid2">
+      <div class="field"><span>Finesse du motif</span>
+        <select id="res">
+          <option value="0.4">0,4 mm — très fin (lourd)</option>
+          <option value="0.6" selected>0,6 mm — recommandé</option>
+          <option value="0.8">0,8 mm</option>
+          <option value="1.2">1,2 mm — rapide</option>
+          <option value="2">2 mm — brouillon</option>
+        </select></div>
+      <div class="field"><span>Couleurs 3MF standard</span>
+        <select id="mat"><option value="0" selected>Non (conseillé)</option><option value="1">Oui (aperçu Windows)</option></select></div>
+    </div>
+    <div style="margin-top:12px"><button class="btn primary" id="gen" disabled>Générer la 3D</button></div>
+    <div class="progress" id="prog"><div></div></div>
+    <div class="msg" id="genMsg"></div>
+    <div class="filaments" id="fils"></div>
+    <div style="margin-top:10px"><button class="btn go" id="dl" disabled>Télécharger le .3mf</button></div>
+    <div class="msg" id="dlMsg"></div>
+  </section>
+
+  <section class="step">
+    <h2>Imprimer</h2>
+    <p class="hint" style="margin-top:0">Ouvre le .3mf dans Bambu Studio, OrcaSlicer ou PrusaSlicer : la peinture multicolore est déjà appliquée, il te reste à associer les filaments 1, 2, 3… Imprime la face décorée contre le plateau texturé pour un beau fini. Pour les clips, préfère le PETG ou l'ABS/ASA au PLA.</p>
+  </section>
+</aside>
+
+<main>
+  <div class="tabs">
+    <button data-t="v2d" class="on">Placement</button>
+    <button data-t="v3d">Aperçu 3D</button>
+    <div class="spacer"></div>
+    <div class="stats" id="stats"></div>
+  </div>
+  <div class="view on" id="v2d">
+    <canvas id="c2d"></canvas>
+    <div class="overlay" id="ov2d">Vue de dessus · ajoute une image pour commencer</div>
+  </div>
+  <div class="view" id="v3d">
+    <canvas id="c3d"></canvas>
+    <div class="badge" id="stale">Réglages modifiés · régénère la 3D</div>
+    <div class="overlay">Clic gauche : tourner · molette : zoom · clic droit : déplacer</div>
+  </div>
+</main>
+</div>
+
+<script>
+// ================= CORE (géométrie, image, 3MF) =================
+const NZ_MIN = 0.25;          // un triangle "regarde vers le haut" si sa normale z > 0.25
+const EKBIG = 67108864;       // 2^26, pour les clés d'arêtes
+
+// ---- Plaque de test paramétrique (rectangle arrondi, bombé, maillage en grille) ----
+function makeDemoPlate(L, W, T, R, camber, step) {
+  step = step || 4;
+  const hw = L / 2, hh = W / 2;
+  R = Math.max(0, Math.min(R, hw - 1, hh - 1));
+  const nx = Math.max(2, Math.round(L / step)), ny = Math.max(2, Math.round(W / step));
+  const cols = nx + 1, rows = ny + 1, nTop = cols * rows;
+  const pos = new Float64Array(nTop * 2 * 3);
+  let p = 0;
+  for (let layer = 0; layer < 2; layer++) {
+    for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) {
+      let x = -hw + L * i / nx, y = -hh + W * j / ny;
+      if (R > 0 && Math.abs(x) > hw - R && Math.abs(y) > hh - R) {
+        const cx = Math.sign(x) * (hw - R), cy = Math.sign(y) * (hh - R);
+        const dx = x - cx, dy = y - cy;
+        const m = Math.max(Math.abs(dx), Math.abs(dy)), l = Math.hypot(dx, dy);
+        if (l > 1e-9) { x = cx + dx * m / l; y = cy + dy * m / l; }
+      }
+      const bump = camber * (1 - (y / hh) ** 2);
+      pos[p++] = x; pos[p++] = y; pos[p++] = bump + (layer === 0 ? T : 0);
+    }
+  }
+  const id = (i, j, bottom) => j * cols + i + (bottom ? nTop : 0);
+  const tri = [];
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+    const a = id(i, j), b = id(i + 1, j), c = id(i + 1, j + 1), d = id(i, j + 1);
+    tri.push(a, b, c, a, c, d);
+    const A = a + nTop, B = b + nTop, C = c + nTop, D = d + nTop;
+    tri.push(A, C, B, A, D, C);
+  }
+  const loop = [];
+  for (let i = 0; i < nx; i++) loop.push([i, 0]);
+  for (let j = 0; j < ny; j++) loop.push([nx, j]);
+  for (let i = nx; i > 0; i--) loop.push([i, ny]);
+  for (let j = ny; j > 0; j--) loop.push([0, j]);
+  for (let k = 0; k < loop.length; k++) {
+    const a = loop[k], b = loop[(k + 1) % loop.length];
+    const ta = id(a[0], a[1]), tb = id(b[0], b[1]), ba = ta + nTop, bb = tb + nTop;
+    tri.push(ta, ba, bb, ta, bb, tb);
+  }
+  return { pos, tri: Uint32Array.from(tri) };
+}
+
+// ---- Lecture STL (binaire ou ASCII) + soudure des sommets ----
+function parseSTL(buf) {
+  const dv = new DataView(buf);
+  let raw = null;
+  if (buf.byteLength >= 84) {
+    const n = dv.getUint32(80, true);
+    if (84 + n * 50 === buf.byteLength) {
+      raw = new Float64Array(n * 9);
+      for (let t = 0; t < n; t++) {
+        const o = 84 + t * 50 + 12;
+        for (let k = 0; k < 9; k++) raw[t * 9 + k] = dv.getFloat32(o + k * 4, true);
+      }
+    }
+  }
+  if (!raw) {
+    const txt = new TextDecoder().decode(buf);
+    const re = /vertex\s+([-+\d.eE]+)\s+([-+\d.eE]+)\s+([-+\d.eE]+)/g;
+    const v = []; let m;
+    while ((m = re.exec(txt))) v.push(+m[1], +m[2], +m[3]);
+    if (v.length < 9) throw new Error("Fichier STL illisible ou vide.");
+    raw = Float64Array.from(v.slice(0, v.length - (v.length % 9)));
+  }
+  return weld(raw);
+}
+
+function weld(raw) {
+  const map = new Map(), pos = [], tri = [];
+  const nT = raw.length / 9;
+  const idx = [0, 0, 0];
+  for (let t = 0; t < nT; t++) {
+    for (let k = 0; k < 3; k++) {
+      const x = raw[t * 9 + k * 3], y = raw[t * 9 + k * 3 + 1], z = raw[t * 9 + k * 3 + 2];
+      const key = Math.round(x * 1e4) + "," + Math.round(y * 1e4) + "," + Math.round(z * 1e4);
+      let i = map.get(key);
+      if (i === undefined) { i = pos.length / 3; pos.push(x, y, z); map.set(key, i); }
+      idx[k] = i;
+    }
+    if (idx[0] !== idx[1] && idx[1] !== idx[2] && idx[0] !== idx[2]) tri.push(idx[0], idx[1], idx[2]);
+  }
+  if (!tri.length) throw new Error("Aucun triangle valide dans le fichier.");
+  return { pos: Float64Array.from(pos), tri: Uint32Array.from(tri) };
+}
+
+// ---- Orientation : la face décorée vers +Z, rotation 90° en Z, centrage ----
+function orientMesh(mesh, face, spin) {
+  const n = mesh.pos.length / 3, out = new Float64Array(mesh.pos.length);
+  const rot = {
+    "+Z": (x, y, z) => [x, y, z], "-Z": (x, y, z) => [x, -y, -z],
+    "+Y": (x, y, z) => [x, -z, y], "-Y": (x, y, z) => [x, z, -y],
+    "+X": (x, y, z) => [-z, y, x], "-X": (x, y, z) => [z, y, -x],
+  }[face] || ((x, y, z) => [x, y, z]);
+  let minX = Infinity, minY = Infinity, minZ = Infinity, maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+  for (let i = 0; i < n; i++) {
+    let [x, y, z] = rot(mesh.pos[i * 3], mesh.pos[i * 3 + 1], mesh.pos[i * 3 + 2]);
+    for (let s = 0; s < (spin % 4 + 4) % 4; s++) { const t = x; x = -y; y = t; }
+    out[i * 3] = x; out[i * 3 + 1] = y; out[i * 3 + 2] = z;
+    if (x < minX) minX = x; if (x > maxX) maxX = x;
+    if (y < minY) minY = y; if (y > maxY) maxY = y;
+    if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
+  }
+  const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+  for (let i = 0; i < n; i++) { out[i * 3] -= cx; out[i * 3 + 1] -= cy; out[i * 3 + 2] -= minZ; }
+  return { pos: out, tri: mesh.tri, size: [maxX - minX, maxY - minY, maxZ - minZ] };
+}
+
+// ---- Quantification des couleurs (k-means++ déterministe) ----
+function kmeans(rgba, k) {
+  const n = rgba.length / 4, opaque = [];
+  for (let i = 0; i < n; i++) if (rgba[i * 4 + 3] >= 128) opaque.push(i);
+  if (!opaque.length) return [];
+  const MAXS = 40000, step = Math.max(1, Math.floor(opaque.length / MAXS));
+  const S = [];
+  for (let i = 0; i < opaque.length; i += step) { const o = opaque[i] * 4; S.push([rgba[o], rgba[o + 1], rgba[o + 2]]); }
+  let seed = 12345; const rnd = () => ((seed = (seed * 1103515245 + 12345) >>> 0) / 4294967296);
+  const d2 = (a, b) => (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2;
+  const C = [S[Math.floor(rnd() * S.length)].slice()];
+  const D = S.map(s => d2(s, C[0]));
+  while (C.length < k) {
+    const tot = D.reduce((a, b) => a + b, 0);
+    if (tot === 0) break;
+    let r = rnd() * tot, i = 0;
+    while (i < S.length - 1 && (r -= D[i]) > 0) i++;
+    C.push(S[i].slice());
+    for (let j = 0; j < S.length; j++) D[j] = Math.min(D[j], d2(S[j], C[C.length - 1]));
+  }
+  const asg = new Int32Array(S.length);
+  for (let it = 0; it < 20; it++) {
+    let moved = 0;
+    for (let j = 0; j < S.length; j++) {
+      let best = 0, bd = Infinity;
+      for (let c = 0; c < C.length; c++) { const d = d2(S[j], C[c]); if (d < bd) { bd = d; best = c; } }
+      if (asg[j] !== best) { asg[j] = best; moved++; }
+    }
+    const acc = C.map(() => [0, 0, 0, 0]);
+    for (let j = 0; j < S.length; j++) { const a = acc[asg[j]]; a[0] += S[j][0]; a[1] += S[j][1]; a[2] += S[j][2]; a[3]++; }
+    for (let c = 0; c < C.length; c++) if (acc[c][3]) C[c] = [acc[c][0] / acc[c][3], acc[c][1] / acc[c][3], acc[c][2] / acc[c][3]];
+    if (it > 0 && moved === 0) break;
+  }
+  // tri du plus sombre au plus clair pour un ordre stable
+  return C.map(c => c.map(Math.round)).sort((a, b) => (a[0] * .3 + a[1] * .59 + a[2] * .11) - (b[0] * .3 + b[1] * .59 + b[2] * .11));
+}
+
+function labelPixels(rgba, centers) {
+  const n = rgba.length / 4, lab = new Int16Array(n);
+  for (let i = 0; i < n; i++) {
+    const o = i * 4;
+    if (rgba[o + 3] < 128) { lab[i] = -1; continue; }
+    let best = 0, bd = Infinity;
+    for (let c = 0; c < centers.length; c++) {
+      const d = (rgba[o] - centers[c][0]) ** 2 + (rgba[o + 1] - centers[c][1]) ** 2 + (rgba[o + 2] - centers[c][2]) ** 2;
+      if (d < bd) { bd = d; best = c; }
+    }
+    lab[i] = best;
+  }
+  return lab;
+}
+
+// filtre de mode 3x3 : enlève les pixels isolés (moins de micro-zones à imprimer)
+function smoothLabels(lab, w, h, k) {
+  const out = new Int16Array(lab.length), cnt = new Int32Array(k + 1);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    cnt.fill(0);
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const xx = x + dx, yy = y + dy;
+      if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
+      cnt[lab[yy * w + xx] + 1]++;
+    }
+    const self = lab[y * w + x];
+    let best = self, bc = cnt[self + 1];
+    for (let c = 0; c <= k; c++) if (cnt[c] > bc) { bc = cnt[c]; best = c - 1; }
+    out[y * w + x] = best;
+  }
+  return out;
+}
+
+// ---- Raffinement conforme du maillage sous la zone de l'image ----
+// Chaque arête trop longue d'un triangle ciblé est coupée en son milieu ; les triangles
+// voisins sont re-découpés avec la même arête, donc le maillage reste étanche.
+async function refineMesh(base, rect, L, onProgress, maxTris) {
+  maxTris = maxTris || 4e6;
+  const pos = Array.from(base.pos);
+  let tri = Array.from(base.tri);
+  const cs = Math.cos(rect.rot), sn = Math.sin(rect.rot);
+  const ex = Math.abs(cs) * rect.w / 2 + Math.abs(sn) * rect.h / 2 + L;
+  const ey = Math.abs(sn) * rect.w / 2 + Math.abs(cs) * rect.h / 2 + L;
+  const minX = rect.cx - ex, maxX = rect.cx + ex, minY = rect.cy - ey, maxY = rect.cy + ey;
+  const L2 = L * L;
+  const ek = (a, b) => a < b ? a * EKBIG + b : b * EKBIG + a;
+  for (let pass = 0; pass < 24; pass++) {
+    const mids = new Map();
+    const nT = tri.length / 3;
+    for (let t = 0; t < nT; t++) {
+      const a = tri[t * 3], b = tri[t * 3 + 1], c = tri[t * 3 + 2];
+      const ax = pos[a * 3], ay = pos[a * 3 + 1], az = pos[a * 3 + 2];
+      const bx = pos[b * 3], by = pos[b * 3 + 1], bz = pos[b * 3 + 2];
+      const cx = pos[c * 3], cy = pos[c * 3 + 1], cz = pos[c * 3 + 2];
+      if (Math.max(ax, bx, cx) < minX || Math.min(ax, bx, cx) > maxX || Math.max(ay, by, cy) < minY || Math.min(ay, by, cy) > maxY) continue;
+      const ux = bx - ax, uy = by - ay, uz = bz - az, vx = cx - ax, vy = cy - ay, vz = cz - az;
+      const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+      const nl = Math.hypot(nx, ny, nz);
+      if (nl === 0 || nz / nl < NZ_MIN) continue;
+      if (ux * ux + uy * uy + uz * uz > L2) mids.set(ek(a, b), -1);
+      if ((cx - bx) ** 2 + (cy - by) ** 2 + (cz - bz) ** 2 > L2) mids.set(ek(b, c), -1);
+      if (vx * vx + vy * vy + vz * vz > L2) mids.set(ek(c, a), -1);
+    }
+    if (!mids.size) break;
+    for (const k of mids.keys()) {
+      const a = Math.floor(k / EKBIG), b = k - a * EKBIG;
+      const i = pos.length / 3;
+      pos.push((pos[a * 3] + pos[b * 3]) / 2, (pos[a * 3 + 1] + pos[b * 3 + 1]) / 2, (pos[a * 3 + 2] + pos[b * 3 + 2]) / 2);
+      mids.set(k, i);
+    }
+    const d2 = (i, j) => (pos[i * 3] - pos[j * 3]) ** 2 + (pos[i * 3 + 1] - pos[j * 3 + 1]) ** 2 + (pos[i * 3 + 2] - pos[j * 3 + 2]) ** 2;
+    const nt = [];
+    for (let t = 0; t < nT; t++) {
+      const a = tri[t * 3], b = tri[t * 3 + 1], c = tri[t * 3 + 2];
+      const m0 = mids.get(ek(a, b)) ?? -1, m1 = mids.get(ek(b, c)) ?? -1, m2 = mids.get(ek(c, a)) ?? -1;
+      const s = (m0 >= 0) + (m1 >= 0) + (m2 >= 0);
+      if (s === 0) nt.push(a, b, c);
+      else if (s === 3) nt.push(a, m0, m2, m0, b, m1, m2, m1, c, m0, m1, m2);
+      else if (s === 1) {
+        if (m0 >= 0) nt.push(a, m0, c, m0, b, c);
+        else if (m1 >= 0) nt.push(b, m1, a, m1, c, a);
+        else nt.push(c, m2, b, m2, a, b);
+      } else {
+        let p, q, r, mA, mB;
+        if (m0 >= 0 && m1 >= 0) { p = a; q = b; r = c; mA = m0; mB = m1; }
+        else if (m1 >= 0 && m2 >= 0) { p = b; q = c; r = a; mA = m1; mB = m2; }
+        else { p = c; q = a; r = b; mA = m2; mB = m0; }
+        nt.push(mA, q, mB);
+        if (d2(mA, r) < d2(p, mB)) nt.push(p, mA, r, mA, mB, r);
+        else nt.push(p, mA, mB, p, mB, r);
+      }
+    }
+    tri = nt;
+    if (tri.length / 3 > maxTris) throw new Error("Trop de triangles (" + Math.round(tri.length / 3 / 1e3) + " k). Augmente la résolution (valeur en mm plus grande) ou réduis l'image.");
+    if (onProgress) await onProgress(pass, tri.length / 3);
+  }
+  return { pos: Float64Array.from(pos), tri: Uint32Array.from(tri) };
+}
+
+// ---- Attribution d'un filament à chaque triangle (projection de dessus) ----
+// slotExt[label] = numéro de filament (1 = couleur de la coque)
+function paintMesh(mesh, rect, lab, lw, lh, slotExt) {
+  const { pos, tri } = mesh, nT = tri.length / 3, ext = new Uint8Array(nT).fill(1);
+  const cs = Math.cos(rect.rot), sn = Math.sin(rect.rot);
+  for (let t = 0; t < nT; t++) {
+    const a = tri[t * 3] * 3, b = tri[t * 3 + 1] * 3, c = tri[t * 3 + 2] * 3;
+    const ux = pos[b] - pos[a], uy = pos[b + 1] - pos[a + 1], uz = pos[b + 2] - pos[a + 2];
+    const vx = pos[c] - pos[a], vy = pos[c + 1] - pos[a + 1], vz = pos[c + 2] - pos[a + 2];
+    const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    const nl = Math.hypot(nx, ny, nz);
+    if (nl === 0 || nz / nl < NZ_MIN) continue;
+    const dx = (pos[a] + pos[b] + pos[c]) / 3 - rect.cx, dy = (pos[a + 1] + pos[b + 1] + pos[c + 1]) / 3 - rect.cy;
+    const u = (cs * dx + sn * dy) / rect.w + 0.5, v = 0.5 - (-sn * dx + cs * dy) / rect.h;
+    if (u < 0 || u >= 1 || v < 0 || v >= 1) continue;
+    const l = lab[Math.floor(v * lh) * lw + Math.floor(u * lw)];
+    if (l >= 0) ext[t] = slotExt[l];
+  }
+  return ext;
+}
+
+// ---- Export 3MF (peinture multi-filament Bambu Studio / OrcaSlicer / PrusaSlicer) ----
+function paintCode(n) {          // format TriangleSelector : 1→"4", 2→"8", 3→"0C", 4→"1C"…
+  if (n === 1) return "4";
+  if (n === 2) return "8";
+  return (n - 3).toString(16).toUpperCase() + "C";
+}
+
+function build3MFFiles(mesh, ext, colors, opts) {
+  opts = opts || {};
+  const f = v => { const r = Math.round(v * 1e4) / 1e4; return Object.is(r, -0) ? "0" : String(r); };
+  const out = [];
+  out.push('<?xml version="1.0" encoding="UTF-8"?>\n<model unit="millimeter" xml:lang="fr-FR" ' +
+    'xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" ' +
+    'xmlns:slic3rpe="http://schemas.slic3r.org/3mf/2017/06">\n' +
+    '<metadata name="Title">' + (opts.title || "Coque PS5 Slim personnalisée") + '</metadata>\n' +
+    '<metadata name="Application">Atelier Coque PS5 Slim</metadata>\n<resources>\n');
+  if (opts.materials) {
+    out.push('<basematerials id="1">\n');
+    for (let i = 1; i < colors.length; i++) out.push('<base name="Filament ' + i + '" displaycolor="' + colors[i].toUpperCase() + 'FF"/>\n');
+    out.push('</basematerials>\n<object id="2" type="model" name="Coque PS5 Slim" pid="1" pindex="0">\n');
+  } else out.push('<object id="2" type="model" name="Coque PS5 Slim">\n');
+  out.push('<mesh>\n<vertices>\n');
+  const { pos, tri } = mesh, nV = pos.length / 3, nT = tri.length / 3;
+  let buf = [];
+  for (let i = 0; i < nV; i++) {
+    buf.push('<vertex x="' + f(pos[i * 3]) + '" y="' + f(pos[i * 3 + 1]) + '" z="' + f(pos[i * 3 + 2]) + '"/>');
+    if (buf.length >= 20000) { out.push(buf.join("\n") + "\n"); buf = []; }
+  }
+  if (buf.length) out.push(buf.join("\n") + "\n");
+  out.push('</vertices>\n<triangles>\n'); buf = [];
+  for (let t = 0; t < nT; t++) {
+    let s = '<triangle v1="' + tri[t * 3] + '" v2="' + tri[t * 3 + 1] + '" v3="' + tri[t * 3 + 2] + '"';
+    const e = ext[t];
+    if (opts.materials) s += ' p1="' + (e - 1) + '"';
+    if (e > 1) { const pc = paintCode(e); s += ' paint_color="' + pc + '" slic3rpe:mmu_segmentation="' + pc + '"'; }
+    buf.push(s + '/>');
+    if (buf.length >= 20000) { out.push(buf.join("\n") + "\n"); buf = []; }
+  }
+  if (buf.length) out.push(buf.join("\n") + "\n");
+  out.push('</triangles>\n</mesh>\n</object>\n</resources>\n<build>\n<item objectid="2"/>\n</build>\n</model>\n');
+  return {
+    "[Content_Types].xml": '<?xml version="1.0" encoding="UTF-8"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+      '<Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/></Types>',
+    "_rels/.rels": '<?xml version="1.0" encoding="UTF-8"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></Relationships>',
+    "3D/3dmodel.model": out,
+  };
+}
+
+function readmeText(colors, counts, sizeMM) {
+  let s = "ATELIER COQUE — PS5 SLIM\r\n========================\r\n\r\n";
+  s += "Dimensions : " + sizeMM.map(v => v.toFixed(1)).join(" x ") + " mm\r\n\r\nFilaments à charger (dans cet ordre) :\r\n";
+  for (let i = 1; i < colors.length; i++) s += "  Filament " + i + " : " + colors[i].toUpperCase() + (i === 1 ? "  (couleur de la coque)" : "") + "  —  " + (counts[i] || 0) + " triangles\r\n";
+  s += "\r\nOuvre le fichier .3mf dans Bambu Studio, OrcaSlicer ou PrusaSlicer.\r\n" +
+    "La peinture multicolore est déjà appliquée : choisis les couleurs des filaments 1 à " + (colors.length - 1) + " dans le slicer.\r\n";
+  return s;
+}
+
+
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { zipSync, strToU8, unzlibSync } from "fflate";
+
+const $ = id => document.getElementById(id);
+const S = {
+  src: "petite-logo", rawSTL: null, stlName: "", face: "+Z", spin: 0,
+  base: null,                       // maillage orienté et centré
+  img: null,                        // {w,h,rgba}
+  centers: [], labels: null,        // labels finaux (après lissage)
+  slots: [],                        // [{color, merge}]
+  baseColor: "#f1f1f3",
+  rect: { cx: 0, cy: 0, w: 200, h: 120, rot: 0 },
+  refined: null, refinedKey: "", ext: null, busy: false,
+};
+const hex = c => "#" + c.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("");
+const hexRGB = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+
+// ---------------- Coque ----------------
+const BUILTIN = { "petite-logo": "Petite coque (logo)", "petite": "Petite coque", "grande-fente": "Grande coque (fente)", "grande": "Grande coque" };
+const partCache = {};
+async function loadPart(id) {
+  if (partCache[id]) return partCache[id];
+  const r = await fetch("parts/" + id + ".json");
+  if (!r.ok) throw new Error("Impossible de charger le modèle " + id + " (" + r.status + ").");
+  const bin = atob((await r.json()).data), z = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) z[i] = bin.charCodeAt(i);
+  const u8 = unzlibSync(z);
+  const dv = new DataView(u8.buffer, u8.byteOffset), nV = dv.getUint32(0, true), nT = dv.getUint32(4, true);
+  const buf = u8.buffer.slice(u8.byteOffset + 8, u8.byteOffset + 8 + nV * 12 + nT * 12);
+  return (partCache[id] = { pos: Float64Array.from(new Float32Array(buf, 0, nV * 3)), tri: new Uint32Array(buf, nV * 12, nT * 3) });
+}
+let rebuildSeq = 0;
+async function rebuildBase() {
+  const seq = ++rebuildSeq;
+  try {
+    let raw;
+    if (BUILTIN[S.src]) {
+      $("baseInfo").className = "msg"; $("baseInfo").textContent = "Chargement du modèle…";
+      raw = await loadPart(S.src);
+      if (seq !== rebuildSeq) return;
+      S.base = orientMesh(raw, "+Z", S.spin);
+    } else if (S.src === "demo") {
+      raw = makeDemoPlate(+$("dL").value || 340, +$("dW").value || 190, +$("dT").value || 2.4, +$("dR").value || 0, +$("dC").value || 0, 4);
+      S.base = orientMesh(raw, "+Z", S.spin);
+    } else {
+      if (!S.rawSTL) { S.base = null; $("baseInfo").textContent = "Aucun STL chargé."; draw2D(true); show3DBase(); updateUI(); return; }
+      S.base = orientMesh(S.rawSTL, S.face, S.spin);
+    }
+    const [x, y, z] = S.base.size;
+    const big = Math.max(x, y) > 256;
+    $("baseInfo").className = "msg" + (big ? "" : " ok");
+    $("baseInfo").innerHTML = (S.src === "stl" ? "<b>" + S.stlName + "</b> · " : BUILTIN[S.src] ? "<b>" + BUILTIN[S.src] + "</b> · " : "") + x.toFixed(1) + " × " + y.toFixed(1) + " × " + z.toFixed(1) + " mm · " +
+      (S.base.tri.length / 3).toLocaleString("fr-FR") + " triangles" +
+      (big ? '<div class="note warn">Plus grand que 256 mm : il faut une imprimante grand format (ex. 350 mm) ou découper la coque dans le slicer.</div>' : "");
+  } catch (e) { S.base = null; $("baseInfo").className = "msg err"; $("baseInfo").textContent = e.message; }
+  if (S.img && S.base) fitImage();
+  invalidateGeom();
+  draw2D(true); show3DBase(); updateUI();
+}
+
+document.querySelectorAll("#parts button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("#parts button").forEach(x => x.classList.toggle("on", x === b));
+  S.src = b.dataset.v; S.spin = 0;
+  $("demoBox").classList.toggle("hidden", S.src !== "demo");
+  $("stlBox").classList.toggle("hidden", S.src !== "stl");
+  rebuildBase();
+});
+["dL", "dW", "dT", "dR", "dC"].forEach(id => $(id).addEventListener("change", rebuildBase));
+$("face").onchange = () => { S.face = $("face").value; rebuildBase(); };
+$("spin").onclick = () => { S.spin = (S.spin + 1) % 4; rebuildBase(); };
+
+function wireDrop(drop, input, onFile) {
+  drop.onclick = () => input.click();
+  input.onchange = () => input.files[0] && onFile(input.files[0]);
+  drop.ondragover = e => { e.preventDefault(); drop.classList.add("over"); };
+  drop.ondragleave = () => drop.classList.remove("over");
+  drop.ondrop = e => { e.preventDefault(); drop.classList.remove("over"); e.dataTransfer.files[0] && onFile(e.dataTransfer.files[0]); };
+}
+wireDrop($("stlDrop"), $("stlIn"), async file => {
+  $("baseInfo").className = "msg"; $("baseInfo").textContent = "Lecture du STL…";
+  try {
+    S.rawSTL = parseSTL(await file.arrayBuffer()); S.stlName = file.name; S.spin = 0;
+    $("stlDrop").innerHTML = "✓ <b>" + file.name + "</b> — clique pour changer";
+  } catch (e) { S.rawSTL = null; $("baseInfo").className = "msg err"; $("baseInfo").textContent = e.message; return; }
+  rebuildBase();
+});
+
+// ---------------- Image ----------------
+wireDrop($("imgDrop"), $("imgIn"), file => {
+  const url = URL.createObjectURL(file), im = new Image();
+  im.onload = () => {
+    const MAX = 1000, sc = Math.min(1, MAX / Math.max(im.width, im.height));
+    const w = Math.max(1, Math.round(im.width * sc)), h = Math.max(1, Math.round(im.height * sc));
+    const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+    const cx = cv.getContext("2d"); cx.drawImage(im, 0, 0, w, h);
+    S.img = { w, h, rgba: cx.getImageData(0, 0, w, h).data };
+    $("imgDrop").innerHTML = '<img src="' + url + '">' + file.name + " · " + im.width + "×" + im.height;
+    S.rect.rot = 0; $("rot").value = 0;
+    quantize(); fitImage(); invalidateGeom(); draw2D(); updateUI();
+  };
+  im.onerror = () => { $("imgDropTxt").textContent = "Image illisible, essaie un PNG ou JPG."; };
+  im.src = url;
+});
+
+function quantize() {
+  if (!S.img) return;
+  const k = +$("k").value;
+  const prev = S.slots;
+  S.centers = kmeans(S.img.rgba, k);
+  let lab = labelPixels(S.img.rgba, S.centers);
+  if ($("smooth").checked) lab = smoothLabels(lab, S.img.w, S.img.h, S.centers.length);
+  S.labels = lab;
+  S.slots = S.centers.map((c, i) => ({ color: hex(c), merge: prev[i] && prev.length === S.centers.length ? prev[i].merge : false }));
+  renderSlots(); buildQuantCanvas(); repaintIfPossible();
+}
+function slotExt() {           // label -> numéro de filament
+  let n = 2;
+  return S.slots.map(s => s.merge ? 1 : n++);
+}
+function extColors() {          // index filament -> couleur
+  const cols = ["", S.baseColor];
+  S.slots.forEach(s => { if (!s.merge) cols.push(s.color); });
+  return cols;
+}
+function renderSlots() {
+  const counts = new Array(S.centers.length).fill(0); let tot = 0;
+  if (S.labels) for (const l of S.labels) if (l >= 0) { counts[l]++; tot++; }
+  const box = $("slots"); box.innerHTML = "";
+  const se = slotExt();
+  S.slots.forEach((s, i) => {
+    const d = document.createElement("div"); d.className = "slot";
+    d.innerHTML = '<input type="color" value="' + s.color + '"><span class="nm">' + (s.merge ? "→ Filament 1 (coque)" : "Filament " + se[i]) +
+      '</span><span class="pct">' + (tot ? (100 * counts[i] / tot).toFixed(1) : 0) + '%</span><label><input type="checkbox" ' + (s.merge ? "checked" : "") + '>= coque</label>';
+    d.querySelector("input[type=color]").oninput = e => { s.color = e.target.value; buildQuantCanvas(); draw2D(); recolor3D(); renderFils(); };
+    d.querySelector("input[type=checkbox]").onchange = e => { s.merge = e.target.checked; renderSlots(); buildQuantCanvas(); draw2D(); repaintIfPossible(); };
+    box.appendChild(d);
+  });
+  renderFils();
+}
+function renderFils() {
+  const cols = extColors();
+  $("fils").innerHTML = cols.slice(1).map((c, i) => '<span class="fil"><i style="background:' + c + '"></i>F' + (i + 1) + (i === 0 ? " coque" : "") + "</span>").join("");
+}
+$("k").oninput = () => { $("kVal").textContent = $("k").value; };
+$("k").onchange = () => { quantize(); draw2D(); };
+$("smooth").onchange = () => { quantize(); draw2D(); };
+$("baseColor").oninput = () => { S.baseColor = $("baseColor").value; buildQuantCanvas(); draw2D(true); recolor3D(); renderFils(); };
+
+let qcv = null;
+function buildQuantCanvas() {
+  if (!S.img || !S.labels) return;
+  qcv = qcv || document.createElement("canvas");
+  qcv.width = S.img.w; qcv.height = S.img.h;
+  const cx = qcv.getContext("2d"), id = cx.createImageData(S.img.w, S.img.h), d = id.data;
+  const pal = S.slots.map(s => hexRGB(s.merge ? S.baseColor : s.color));
+  for (let i = 0; i < S.labels.length; i++) {
+    const l = S.labels[i]; if (l < 0) continue;
+    const c = pal[l]; d[i * 4] = c[0]; d[i * 4 + 1] = c[1]; d[i * 4 + 2] = c[2]; d[i * 4 + 3] = 255;
+  }
+  cx.putImageData(id, 0, 0);
+}
+
+// ---------------- Placement ----------------
+function setRect(p) { Object.assign(S.rect, p); if (S.img) S.rect.h = S.rect.w * S.img.h / S.img.w; syncPlaceUI(); invalidateGeom(); draw2D(); }
+function syncPlaceUI() {
+  $("w").value = Math.round(S.rect.w); $("wVal").textContent = Math.round(S.rect.w) + " × " + Math.round(S.rect.h) + " mm";
+  const deg = Math.round(S.rect.rot * 180 / Math.PI); $("rot").value = deg; $("rVal").textContent = deg + "°";
+}
+function fitImage(cover) {
+  if (!S.img || !S.base) return;
+  const [bw, bh] = S.base.size, ar = S.img.w / S.img.h;
+  const rotated = Math.abs(Math.sin(S.rect.rot)) > 0.7;
+  const W = rotated ? bh : bw, H = rotated ? bw : bh;
+  const w = cover ? Math.max(W, H * ar) : Math.min(0.85 * W, 0.85 * H * ar);
+  setRect({ cx: 0, cy: 0, w });
+}
+$("w").oninput = () => setRect({ w: +$("w").value });
+$("rot").oninput = () => setRect({ rot: +$("rot").value * Math.PI / 180 });
+$("center").onclick = () => setRect({ cx: 0, cy: 0 });
+$("fit").onclick = () => fitImage(false);
+$("cover").onclick = () => fitImage(true);
+$("r90").onclick = () => { let d = Math.round(S.rect.rot * 180 / Math.PI) + 90; if (d > 180) d -= 360; setRect({ rot: d * Math.PI / 180 }); };
+
+// ---------------- Vue 2D ----------------
+const c2d = $("c2d"); let sil = null, view = { s: 1, ox: 0, oy: 0 };
+function size2D() {
+  const r = c2d.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  c2d.width = Math.max(10, r.width * dpr); c2d.height = Math.max(10, r.height * dpr);
+}
+function draw2D(rebuildSil) {
+  if (!$("v2d").classList.contains("on")) { sil = rebuildSil ? null : sil; return; }
+  size2D();
+  const W = c2d.width, H = c2d.height, ctx = c2d.getContext("2d"), dpr = window.devicePixelRatio || 1;
+  ctx.fillStyle = "#0c0e13"; ctx.fillRect(0, 0, W, H);
+  // grille
+  ctx.strokeStyle = "#151924"; ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 24 * dpr) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (let y = 0; y < H; y += 24 * dpr) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  if (!S.base) return;
+  const [bw, bh] = S.base.size;
+  view.s = Math.min((W - 80 * dpr) / bw, (H - 80 * dpr) / bh); view.ox = W / 2; view.oy = H / 2;
+  if (rebuildSil || !sil || sil.width !== W || sil.height !== H) {
+    sil = sil || document.createElement("canvas"); sil.width = W; sil.height = H;
+    const sx = sil.getContext("2d"); sx.clearRect(0, 0, W, H);
+    sx.fillStyle = S.baseColor; sx.strokeStyle = S.baseColor; sx.lineWidth = 0.6;
+    const { pos, tri } = S.base; sx.beginPath();
+    for (let t = 0; t < tri.length; t += 3) {
+      const a = tri[t] * 3, b = tri[t + 1] * 3, c = tri[t + 2] * 3;
+      const nz = (pos[b] - pos[a]) * (pos[c + 1] - pos[a + 1]) - (pos[b + 1] - pos[a + 1]) * (pos[c] - pos[a]);
+      if (nz <= 0) continue;
+      sx.moveTo(view.ox + pos[a] * view.s, view.oy - pos[a + 1] * view.s);
+      sx.lineTo(view.ox + pos[b] * view.s, view.oy - pos[b + 1] * view.s);
+      sx.lineTo(view.ox + pos[c] * view.s, view.oy - pos[c + 1] * view.s);
+      sx.closePath();
+    }
+    sx.fill(); sx.stroke();
+  }
+  ctx.save(); ctx.shadowColor = "rgba(0,0,0,.6)"; ctx.shadowBlur = 30 * dpr; ctx.drawImage(sil, 0, 0); ctx.restore();
+  if (S.img && qcv) {
+    const tmp = document.createElement("canvas"); tmp.width = W; tmp.height = H;
+    const tx = tmp.getContext("2d"); tx.drawImage(sil, 0, 0);
+    tx.globalCompositeOperation = "source-atop";
+    tx.translate(view.ox + S.rect.cx * view.s, view.oy - S.rect.cy * view.s); tx.rotate(-S.rect.rot);
+    tx.imageSmoothingEnabled = false;
+    tx.drawImage(qcv, -S.rect.w * view.s / 2, -S.rect.h * view.s / 2, S.rect.w * view.s, S.rect.h * view.s);
+    ctx.drawImage(tmp, 0, 0);
+    ctx.save(); ctx.translate(view.ox + S.rect.cx * view.s, view.oy - S.rect.cy * view.s); ctx.rotate(-S.rect.rot);
+    ctx.setLineDash([6 * dpr, 5 * dpr]); ctx.strokeStyle = "#6ea0ff"; ctx.lineWidth = 1.2 * dpr;
+    ctx.strokeRect(-S.rect.w * view.s / 2, -S.rect.h * view.s / 2, S.rect.w * view.s, S.rect.h * view.s); ctx.restore();
+  }
+  $("ov2d").textContent = "Vue de dessus · coque " + bw.toFixed(0) + " × " + bh.toFixed(0) + " mm" +
+    (S.img ? " · image " + Math.round(S.rect.w) + " × " + Math.round(S.rect.h) + " mm — glisse pour déplacer, molette pour zoomer" : " · ajoute une image");
+}
+let dragging = null;
+c2d.addEventListener("pointerdown", e => { if (!S.img) return; dragging = { x: e.clientX, y: e.clientY, cx: S.rect.cx, cy: S.rect.cy }; c2d.setPointerCapture(e.pointerId); c2d.classList.add("drag"); });
+c2d.addEventListener("pointermove", e => {
+  if (!dragging) return; const dpr = window.devicePixelRatio || 1;
+  Object.assign(S.rect, { cx: dragging.cx + (e.clientX - dragging.x) * dpr / view.s, cy: dragging.cy - (e.clientY - dragging.y) * dpr / view.s });
+  draw2D();
+});
+c2d.addEventListener("pointerup", () => { if (dragging) { dragging = null; c2d.classList.remove("drag"); invalidateGeom(); } });
+c2d.addEventListener("wheel", e => { if (!S.img) return; e.preventDefault(); setRect({ w: Math.max(5, Math.min(600, S.rect.w * Math.exp(-e.deltaY * 0.0012))) }); }, { passive: false });
+window.addEventListener("resize", () => { draw2D(true); resize3D(); });
+
+// ---------------- Vue 3D ----------------
+const c3d = $("c3d");
+const renderer = new THREE.WebGLRenderer({ canvas: c3d, antialias: true });
+renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+const scene = new THREE.Scene(); scene.background = new THREE.Color("#0c0e13");
+const camera = new THREE.PerspectiveCamera(35, 1, 1, 5000); camera.up.set(0, 0, 1);
+const controls = new OrbitControls(camera, c3d); controls.enableDamping = true;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x30343f, 1.1));
+const dl1 = new THREE.DirectionalLight(0xffffff, 1.6); dl1.position.set(200, -300, 500); scene.add(dl1);
+const dl2 = new THREE.DirectionalLight(0x9fb4ff, 0.5); dl2.position.set(-300, 200, 200); scene.add(dl2);
+const grid = new THREE.GridHelper(500, 25, 0x2a3040, 0x1a1e28); grid.rotation.x = Math.PI / 2; scene.add(grid);
+let meshObj = null, meshData = null;
+function resize3D() {
+  const r = c3d.getBoundingClientRect(); if (r.width < 2) return;
+  renderer.setSize(r.width, r.height, false); camera.aspect = r.width / r.height; camera.updateProjectionMatrix();
+}
+function setMesh(mesh, ext) {
+  if (meshObj) { scene.remove(meshObj); meshObj.geometry.dispose(); }
+  meshData = { mesh, ext };
+  if (!mesh) { meshObj = null; return; }
+  const { pos, tri } = mesh, nT = tri.length / 3;
+  const P = new Float32Array(nT * 9);
+  for (let t = 0; t < nT; t++) for (let k = 0; k < 3; k++) { const v = tri[t * 3 + k] * 3; P[t * 9 + k * 3] = pos[v]; P[t * 9 + k * 3 + 1] = pos[v + 1]; P[t * 9 + k * 3 + 2] = pos[v + 2]; }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(P, 3));
+  g.setAttribute("color", new THREE.BufferAttribute(new Float32Array(nT * 9), 3));
+  g.computeVertexNormals();
+  meshObj = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55, metalness: 0.05 }));
+  scene.add(meshObj); recolor3D();
+}
+function recolor3D() {
+  if (!meshObj) return;
+  const cols = extColors().map(c => c ? new THREE.Color(c) : null);
+  const ext = meshData.ext, col = meshObj.geometry.attributes.color.array, nT = col.length / 9;
+  for (let t = 0; t < nT; t++) { const c = cols[ext ? ext[t] : 1] || cols[1]; for (let k = 0; k < 3; k++) { col[t * 9 + k * 3] = c.r; col[t * 9 + k * 3 + 1] = c.g; col[t * 9 + k * 3 + 2] = c.b; } }
+  meshObj.geometry.attributes.color.needsUpdate = true;
+}
+function frameCamera() {
+  if (!S.base) return; const [x, y] = S.base.size, d = Math.max(x, y) * 1.35;
+  camera.position.set(0, -d * 0.75, d * 0.9); controls.target.set(0, 0, 0); controls.update();
+}
+function show3DBase() { setMesh(S.base, null); frameCamera(); }
+(function loop() { requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); })();
+
+document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("on", x === b));
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("on", v.id === b.dataset.t));
+  if (b.dataset.t === "v2d") draw2D(true); else resize3D();
+});
+
+// ---------------- Génération ----------------
+function geomKey() { const r = S.rect; return [S.base && S.base.tri.length, S.base && S.base.size.join(), r.cx.toFixed(2), r.cy.toFixed(2), r.w.toFixed(2), r.rot.toFixed(4), $("res").value].join("|"); }
+function invalidateGeom() {
+  if (S.refined && S.refinedKey !== geomKey()) { $("stale").style.display = "block"; $("dl").disabled = true; }
+  else if (S.refined) { $("stale").style.display = "none"; $("dl").disabled = false; }
+  updateUI();
+}
+$("res").onchange = invalidateGeom;
+function repaintIfPossible() {
+  if (S.refined && S.refinedKey === geomKey() && S.labels) {
+    S.ext = paintMesh(S.refined, S.rect, S.labels, S.img.w, S.img.h, slotExt());
+    if (meshData && meshData.mesh === S.refined) { meshData.ext = S.ext; recolor3D(); }
+  } else invalidateGeom();
+}
+function updateUI() {
+  $("gen").disabled = !(S.base && S.img && S.labels) || S.busy;
+  $("stats").textContent = S.refined ? (S.refined.tri.length / 3).toLocaleString("fr-FR") + " triangles · " + (extColors().length - 1) + " filaments" : "";
+}
+$("gen").onclick = async () => {
+  if (S.busy) return; S.busy = true; updateUI();
+  const prog = $("prog"), bar = prog.firstElementChild; prog.style.display = "block"; bar.style.width = "3%";
+  $("genMsg").className = "msg"; $("genMsg").textContent = "Découpe du maillage sous l'image…"; $("dl").disabled = true;
+  await new Promise(r => setTimeout(r, 30));
+  try {
+    const L = +$("res").value;
+    const est = Math.ceil(Math.log2(Math.max(S.rect.w, S.rect.h, 50) / L)) + 2;
+    const mesh = await refineMesh(S.base, S.rect, L, async (pass, n) => {
+      bar.style.width = Math.min(90, 5 + 85 * (pass + 1) / est) + "%";
+      $("genMsg").textContent = "Découpe du maillage… " + Math.round(n / 1000).toLocaleString("fr-FR") + " k triangles";
+      await new Promise(r => setTimeout(r, 0));
+    });
+    S.refined = mesh; S.refinedKey = geomKey();
+    S.ext = paintMesh(mesh, S.rect, S.labels, S.img.w, S.img.h, slotExt());
+    bar.style.width = "100%";
+    setMesh(mesh, S.ext);
+    document.querySelector('.tabs button[data-t="v3d"]').click();
+    $("stale").style.display = "none";
+    $("genMsg").className = "msg ok"; $("genMsg").textContent = "Prêt ! " + (mesh.tri.length / 3).toLocaleString("fr-FR") + " triangles.";
+    $("dl").disabled = false;
+  } catch (e) { $("genMsg").className = "msg err"; $("genMsg").textContent = e.message; }
+  S.busy = false; updateUI(); setTimeout(() => { prog.style.display = "none"; }, 600);
+};
+
+// ---------------- Export ----------------
+let downloadsNS;
+async function getDownloads() {
+  if (downloadsNS !== undefined) return downloadsNS;
+  try { downloadsNS = (window.claude && window.claude.use) ? await window.claude.use("downloads") : null; } catch { downloadsNS = null; }
+  return downloadsNS;
+}
+$("dl").onclick = async () => {
+  if (!S.refined || !S.ext) return;
+  $("dlMsg").className = "msg"; $("dlMsg").textContent = "Création du fichier…";
+  await new Promise(r => setTimeout(r, 30));
+  try {
+    const cols = extColors();
+    const fname = "ps5-slim-" + (BUILTIN[S.src] ? S.src : S.src === "stl" ? "coque-perso" : "plaque-test");
+    const files = build3MFFiles(S.refined, S.ext, cols, { materials: $("mat").value === "1", title: "PS5 Slim — " + (BUILTIN[S.src] || "coque personnalisée") });
+    const z = {};
+    for (const k in files) { const v = files[k]; z[k] = strToU8(Array.isArray(v) ? v.join("") : v); }
+    const threeMF = zipSync(z, { level: 6 });
+    const counts = []; for (const e of S.ext) counts[e] = (counts[e] || 0) + 1;
+    const dn = await getDownloads();
+    if (dn) {
+      // l'hébergeur n'accepte pas l'extension .3mf : on l'emballe dans un .zip
+      const pack = zipSync({ [fname + ".3mf"]: [threeMF, { level: 0 }], "LISEZMOI.txt": strToU8(readmeText(cols, counts, S.refined ? S.base.size : [0, 0, 0])) });
+      await dn.save({ filename: fname + ".zip", data: new Blob([pack]) });
+      $("dlMsg").className = "msg ok"; $("dlMsg").textContent = "Téléchargé : dézippe pour récupérer " + fname + ".3mf.";
+    } else {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([threeMF], { type: "model/3mf" })); a.download = fname + ".3mf";
+      document.body.appendChild(a); a.click(); a.remove();
+      $("dlMsg").className = "msg ok"; $("dlMsg").textContent = fname + ".3mf téléchargé (" + (threeMF.length / 1048576).toFixed(1) + " Mo).";
+    }
+  } catch (e) {
+    $("dlMsg").className = "msg err";
+    $("dlMsg").textContent = e && e.code === "declined" ? "Téléchargement annulé." : "Échec : " + (e.message || e.code || e);
+  }
+};
+
+// ---------------- Démarrage ----------------
+rebuildBase(); resize3D(); frameCamera(); syncPlaceUI();
+</script>
+</body>
+</html>
