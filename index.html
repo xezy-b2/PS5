@@ -57,6 +57,9 @@
   .slot .pct{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);width:46px;text-align:right}
   .slot .nm{flex:1;font-size:12.5px}
   .slot label{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:4px;cursor:pointer}
+  .slot .del{border:0;background:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 4px;border-radius:5px;line-height:1}
+  .slot .del:hover:not(:disabled){color:var(--err);background:#2a1618}
+  .slot .del:disabled{opacity:.3;cursor:not-allowed}
   .tag{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent2)}
   main{position:relative;display:flex;flex-direction:column;min-width:0}
   .tabs{display:flex;gap:4px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--panel);align-items:center}
@@ -145,7 +148,7 @@
     <div class="row"><label>Couleur de la coque (filament 1)</label><input type="color" id="baseColor" value="#f1f1f3"></div>
     <div class="row"><label>Lisser les petits détails</label><input type="checkbox" id="smooth" checked></div>
     <div class="slots" id="slots"></div>
-    <p class="hint">Change chaque pastille pour la couleur exacte de ton filament. « = coque » fusionne une couleur avec le fond (souvent utile pour le blanc ou le noir de fond).</p>
+    <p class="hint">Change chaque pastille pour la couleur exacte de ton filament. « = coque » fusionne une couleur avec le fond (utile pour un fond blanc ou noir). ✕ supprime une couleur : ses zones prennent la couleur restante la plus proche.</p>
   </section>
 
   <section class="step">
@@ -339,6 +342,16 @@ function kmeans(rgba, k) {
   const n = rgba.length / 4, opaque = [];
   for (let i = 0; i < n; i++) if (rgba[i * 4 + 3] >= 128) opaque.push(i);
   if (!opaque.length) return [];
+  // image déjà en aplats (peu de couleurs distinctes) : on garde ses couleurs exactes
+  const uniq = new Map();
+  for (let i = 0; i < opaque.length && uniq.size <= 64; i++) {
+    const o = opaque[i] * 4, key = (rgba[o] << 16) | (rgba[o + 1] << 8) | rgba[o + 2];
+    uniq.set(key, (uniq.get(key) || 0) + 1);
+  }
+  if (uniq.size <= k) {
+    return [...uniq.keys()].map(v => [v >> 16 & 255, v >> 8 & 255, v & 255])
+      .sort((a, b) => (a[0] * .3 + a[1] * .59 + a[2] * .11) - (b[0] * .3 + b[1] * .59 + b[2] * .11));
+  }
   const MAXS = 40000, step = Math.max(1, Math.floor(opaque.length / MAXS));
   const S = [];
   for (let i = 0; i < opaque.length; i += step) { const o = opaque[i] * 4; S.push([rgba[o], rgba[o + 1], rgba[o + 2]]); }
@@ -703,12 +716,39 @@ function renderSlots() {
   S.slots.forEach((s, i) => {
     const d = document.createElement("div"); d.className = "slot";
     d.innerHTML = '<input type="color" value="' + s.color + '"><span class="nm">' + (s.merge ? "→ Filament 1 (coque)" : "Filament " + se[i]) +
-      '</span><span class="pct">' + (tot ? (100 * counts[i] / tot).toFixed(1) : 0) + '%</span><label><input type="checkbox" ' + (s.merge ? "checked" : "") + '>= coque</label>';
+      '</span><span class="pct">' + (tot ? (100 * counts[i] / tot).toFixed(1) : 0) + '%</span><label><input type="checkbox" ' + (s.merge ? "checked" : "") + '>= coque</label>' +
+      '<button class="del" title="Supprimer cette couleur : ses zones prennent la couleur restante la plus proche"' + (S.slots.length <= 1 ? " disabled" : "") + '>✕</button>';
     d.querySelector("input[type=color]").oninput = e => { s.color = e.target.value; buildQuantCanvas(); draw2D(); recolor3D(); renderFils(); };
-    d.querySelector("input[type=checkbox]").onchange = e => { s.merge = e.target.checked; renderSlots(); buildQuantCanvas(); draw2D(); repaintIfPossible(); };
+    d.querySelector("input[type=checkbox]").onchange = e => { s.merge = e.target.checked; renderSlots(); buildQuantCanvas(); draw2D(); repaintIfPossible(); updateUI(); };
+    d.querySelector(".del").onclick = () => removeSlot(i);
     box.appendChild(d);
   });
   renderFils();
+}
+// Supprime une couleur : chaque pixel concerné prend la couleur restante la plus proche
+// de sa couleur d'origine dans l'image.
+function removeSlot(idx) {
+  if (S.slots.length <= 1 || !S.labels) return;
+  const keep = S.centers.map((c, i) => i).filter(i => i !== idx);
+  const remap = new Int16Array(S.centers.length).fill(-1);
+  keep.forEach((old, n) => { remap[old] = n; });
+  const rgba = S.img.rgba, lab = S.labels;
+  for (let p = 0; p < lab.length; p++) {
+    const l = lab[p];
+    if (l < 0) continue;
+    if (l !== idx) { lab[p] = remap[l]; continue; }
+    let best = 0, bd = Infinity;
+    for (let n = 0; n < keep.length; n++) {
+      const c = S.centers[keep[n]];
+      const d = (rgba[p * 4] - c[0]) ** 2 + (rgba[p * 4 + 1] - c[1]) ** 2 + (rgba[p * 4 + 2] - c[2]) ** 2;
+      if (d < bd) { bd = d; best = n; }
+    }
+    lab[p] = best;
+  }
+  S.centers = keep.map(i => S.centers[i]);
+  S.slots = keep.map(i => S.slots[i]);
+  $("k").value = S.centers.length; $("kVal").textContent = S.centers.length;
+  renderSlots(); buildQuantCanvas(); draw2D(); repaintIfPossible(); updateUI();
 }
 function renderFils() {
   const cols = extColors();
@@ -744,6 +784,8 @@ function fitImage(cover) {
   const [bw, bh] = S.base.size, ar = S.img.w / S.img.h;
   const rotated = Math.abs(Math.sin(S.rect.rot)) > 0.7;
   const W = rotated ? bh : bw, H = rotated ? bw : bh;
+  // image aux proportions de la coque (à 5 % près) : on couvre automatiquement
+  if (cover === undefined) cover = Math.abs(ar / (W / H) - 1) < 0.05;
   const w = cover ? Math.max(W, H * ar) : Math.min(0.85 * W, 0.85 * H * ar);
   setRect({ cx: 0, cy: 0, w });
 }
