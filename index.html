@@ -420,7 +420,7 @@ function smoothLabels(lab, w, h, k) {
 // ---- Raffinement conforme du maillage sous la zone de l'image ----
 // Chaque arête trop longue d'un triangle ciblé est coupée en son milieu ; les triangles
 // voisins sont re-découpés avec la même arête, donc le maillage reste étanche.
-async function refineMesh(base, rect, L, onProgress, maxTris) {
+async function refineMesh(base, rect, L, onProgress, maxTris, needSplit) {
   maxTris = maxTris || 4e6;
   const pos = Array.from(base.pos);
   let tri = Array.from(base.tri);
@@ -443,6 +443,7 @@ async function refineMesh(base, rect, L, onProgress, maxTris) {
       const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
       const nl = Math.hypot(nx, ny, nz);
       if (nl === 0 || nz / nl < NZ_MIN) continue;
+      if (needSplit && !needSplit(ax, ay, bx, by, cx, cy)) continue;
       if (ux * ux + uy * uy + uz * uz > L2) mids.set(ek(a, b), -1);
       if ((cx - bx) ** 2 + (cy - by) ** 2 + (cz - bz) ** 2 > L2) mids.set(ek(b, c), -1);
       if (vx * vx + vy * vy + vz * vz > L2) mids.set(ek(c, a), -1);
@@ -695,7 +696,7 @@ function quantize() {
   S.centers = kmeans(S.img.rgba, k);
   let lab = labelPixels(S.img.rgba, S.centers);
   if ($("smooth").checked) lab = smoothLabels(lab, S.img.w, S.img.h, S.centers.length);
-  S.labels = lab;
+  S.labels = lab; S.labVer = (S.labVer || 0) + 1;
   S.slots = S.centers.map((c, i) => ({ color: hex(c), merge: prev[i] && prev.length === S.centers.length ? prev[i].merge : false }));
   renderSlots(); buildQuantCanvas(); repaintIfPossible();
 }
@@ -745,6 +746,7 @@ function removeSlot(idx) {
     }
     lab[p] = best;
   }
+  S.labVer = (S.labVer || 0) + 1;
   S.centers = keep.map(i => S.centers[i]);
   S.slots = keep.map(i => S.slots[i]);
   $("k").value = S.centers.length; $("kVal").textContent = S.centers.length;
@@ -757,7 +759,7 @@ function renderFils() {
 $("k").oninput = () => { $("kVal").textContent = $("k").value; };
 $("k").onchange = () => { quantize(); draw2D(); };
 $("smooth").onchange = () => { quantize(); draw2D(); };
-$("baseColor").oninput = () => { S.baseColor = $("baseColor").value; buildQuantCanvas(); draw2D(true); recolor3D(); renderFils(); };
+$("baseColor").oninput = () => { S.baseColor = $("baseColor").value; buildQuantCanvas(); draw2D(); recolor3D(); renderFils(); };
 
 let qcv = null;
 function buildQuantCanvas() {
@@ -797,13 +799,51 @@ $("cover").onclick = () => fitImage(true);
 $("r90").onclick = () => { let d = Math.round(S.rect.rot * 180 / Math.PI) + 90; if (d > 180) d -= 360; setRect({ rot: d * Math.PI / 180 }); };
 
 // ---------------- Vue 2D ----------------
-const c2d = $("c2d"); let sil = null, view = { s: 1, ox: 0, oy: 0 };
+const c2d = $("c2d"); let sil = null, tmp2D = null, view = { s: 1, ox: 0, oy: 0 };
 function size2D() {
   const r = c2d.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
-  c2d.width = Math.max(10, r.width * dpr); c2d.height = Math.max(10, r.height * dpr);
+  const w = Math.max(10, Math.round(r.width * dpr)), h = Math.max(10, Math.round(r.height * dpr));
+  if (c2d.width !== w) c2d.width = w;
+  if (c2d.height !== h) c2d.height = h;
 }
-function draw2D(rebuildSil) {
-  if (!$("v2d").classList.contains("on")) { sil = rebuildSil ? null : sil; return; }
+let pending2D = 0, pendingSil = false, tint = null;
+// Silhouette vue de dessus, rastérisée une seule fois par coque (4 px/mm) : bien plus rapide que
+// de tracer des centaines de milliers de triangles avec le canvas.
+const silCache = new WeakMap();
+function silMask(base) {
+  if (silCache.has(base)) return silCache.get(base);
+  const k = 4, [bw, bh] = base.size, { pos, tri } = base;
+  const x0 = -bw / 2 - 1, y1 = bh / 2 + 1, W = Math.ceil((bw + 2) * k), H = Math.ceil((bh + 2) * k);
+  const m = new Uint8Array(W * H);
+  for (let t = 0; t < tri.length; t += 3) {
+    const a = tri[t] * 3, b = tri[t + 1] * 3, c = tri[t + 2] * 3;
+    const ax = (pos[a] - x0) * k, ay = (y1 - pos[a + 1]) * k, bx = (pos[b] - x0) * k, by = (y1 - pos[b + 1]) * k, cx = (pos[c] - x0) * k, cy = (y1 - pos[c + 1]) * k;
+    const area = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+    if (area >= 0) continue;                       // seulement les faces tournées vers le haut (repère écran inversé)
+    const minX = Math.max(0, Math.floor(Math.min(ax, bx, cx))), maxX = Math.min(W - 1, Math.ceil(Math.max(ax, bx, cx)));
+    const minY = Math.max(0, Math.floor(Math.min(ay, by, cy))), maxY = Math.min(H - 1, Math.ceil(Math.max(ay, by, cy)));
+    m[Math.min(H - 1, Math.max(0, ay | 0)) * W + Math.min(W - 1, Math.max(0, ax | 0))] = 1;
+    for (let y = minY; y <= maxY; y++) for (let x = minX; x <= maxX; x++) {
+      const px = x + 0.5, py = y + 0.5;
+      const w0 = (bx - ax) * (py - ay) - (by - ay) * (px - ax), w1 = (cx - bx) * (py - by) - (cy - by) * (px - bx), w2 = (ax - cx) * (py - cy) - (ay - cy) * (px - cx);
+      if (w0 <= 0.5 && w1 <= 0.5 && w2 <= 0.5) m[y * W + x] = 1;
+    }
+  }
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+  const cx2 = cv.getContext("2d"), id = cx2.createImageData(W, H);
+  for (let i = 0; i < m.length; i++) if (m[i] || (m[i - 1] && m[i + 1]) || (m[i - W] && m[i + W])) { id.data[i * 4] = id.data[i * 4 + 1] = id.data[i * 4 + 2] = id.data[i * 4 + 3] = 255; }
+  cx2.putImageData(id, 0, 0);
+  Object.assign(cv, { k, x0, y1 });
+  silCache.set(base, cv);
+  return cv;
+}
+function draw2D(rebuildSil) {           // regroupe les redessins : au plus un par image affichée
+  if (rebuildSil) pendingSil = true;
+  if (pending2D) return;
+  pending2D = requestAnimationFrame(() => { pending2D = 0; const r = pendingSil; pendingSil = false; draw2DNow(r); });
+}
+function draw2DNow(rebuildSil) {
+  if (!$("v2d").classList.contains("on")) { if (rebuildSil) sil = null; return; }
   size2D();
   const W = c2d.width, H = c2d.height, ctx = c2d.getContext("2d"), dpr = window.devicePixelRatio || 1;
   ctx.fillStyle = "#0c0e13"; ctx.fillRect(0, 0, W, H);
@@ -814,26 +854,22 @@ function draw2D(rebuildSil) {
   if (!S.base) return;
   const [bw, bh] = S.base.size;
   view.s = Math.min((W - 80 * dpr) / bw, (H - 80 * dpr) / bh); view.ox = W / 2; view.oy = H / 2;
-  if (rebuildSil || !sil || sil.width !== W || sil.height !== H) {
-    sil = sil || document.createElement("canvas"); sil.width = W; sil.height = H;
-    const sx = sil.getContext("2d"); sx.clearRect(0, 0, W, H);
-    sx.fillStyle = S.baseColor; sx.strokeStyle = S.baseColor; sx.lineWidth = 0.6;
-    const { pos, tri } = S.base; sx.beginPath();
-    for (let t = 0; t < tri.length; t += 3) {
-      const a = tri[t] * 3, b = tri[t + 1] * 3, c = tri[t + 2] * 3;
-      const nz = (pos[b] - pos[a]) * (pos[c + 1] - pos[a + 1]) - (pos[b + 1] - pos[a + 1]) * (pos[c] - pos[a]);
-      if (nz <= 0) continue;
-      sx.moveTo(view.ox + pos[a] * view.s, view.oy - pos[a + 1] * view.s);
-      sx.lineTo(view.ox + pos[b] * view.s, view.oy - pos[b + 1] * view.s);
-      sx.lineTo(view.ox + pos[c] * view.s, view.oy - pos[c + 1] * view.s);
-      sx.closePath();
-    }
-    sx.fill(); sx.stroke();
+  if (rebuildSil || !sil || sil.width !== W || sil.height !== H || sil.base !== S.base) {
+    const m = silMask(S.base);
+    sil = sil || document.createElement("canvas"); sil.width = W; sil.height = H; sil.base = S.base; tint = null;
+    const sx = sil.getContext("2d"); sx.clearRect(0, 0, W, H); sx.imageSmoothingEnabled = true;
+    sx.drawImage(m, view.ox + m.x0 * view.s, view.oy - m.y1 * view.s, m.width / m.k * view.s, m.height / m.k * view.s);
   }
-  ctx.save(); ctx.shadowColor = "rgba(0,0,0,.6)"; ctx.shadowBlur = 30 * dpr; ctx.drawImage(sil, 0, 0); ctx.restore();
+  if (!tint || tint.color !== S.baseColor || tint.width !== W || tint.height !== H) {
+    tint = tint || document.createElement("canvas"); tint.width = W; tint.height = H; tint.color = S.baseColor;
+    const tc = tint.getContext("2d"); tc.drawImage(sil, 0, 0); tc.globalCompositeOperation = "source-in";
+    tc.fillStyle = S.baseColor; tc.fillRect(0, 0, W, H);
+  }
+  ctx.save(); ctx.shadowColor = "rgba(0,0,0,.6)"; ctx.shadowBlur = 30 * dpr; ctx.drawImage(tint, 0, 0); ctx.restore();
   if (S.img && qcv) {
-    const tmp = document.createElement("canvas"); tmp.width = W; tmp.height = H;
-    const tx = tmp.getContext("2d"); tx.drawImage(sil, 0, 0);
+    tmp2D = tmp2D || document.createElement("canvas");
+    const tmp = tmp2D; tmp.width = W; tmp.height = H;
+    const tx = tmp.getContext("2d"); tx.drawImage(tint, 0, 0);
     tx.globalCompositeOperation = "source-atop";
     tx.translate(view.ox + S.rect.cx * view.s, view.oy - S.rect.cy * view.s); tx.rotate(-S.rect.rot);
     tx.imageSmoothingEnabled = false;
@@ -855,7 +891,7 @@ c2d.addEventListener("pointermove", e => {
 });
 c2d.addEventListener("pointerup", () => { if (dragging) { dragging = null; c2d.classList.remove("drag"); invalidateGeom(); } });
 c2d.addEventListener("wheel", e => { if (!S.img) return; e.preventDefault(); setRect({ w: Math.max(5, Math.min(600, S.rect.w * Math.exp(-e.deltaY * 0.0012))) }); }, { passive: false });
-window.addEventListener("resize", () => { draw2D(true); resize3D(); });
+window.addEventListener("resize", () => { draw2D(); resize3D(); });
 
 // ---------------- Vue 3D ----------------
 const c3d = $("c3d");
@@ -871,7 +907,7 @@ const grid = new THREE.GridHelper(500, 25, 0x2a3040, 0x1a1e28); grid.rotation.x 
 let meshObj = null, meshData = null;
 function resize3D() {
   const r = c3d.getBoundingClientRect(); if (r.width < 2) return;
-  renderer.setSize(r.width, r.height, false); camera.aspect = r.width / r.height; camera.updateProjectionMatrix();
+  renderer.setSize(r.width, r.height, false); camera.aspect = r.width / r.height; camera.updateProjectionMatrix(); dirty3D = true;
 }
 function setMesh(mesh, ext) {
   if (meshObj) { scene.remove(meshObj); meshObj.geometry.dispose(); }
@@ -885,30 +921,44 @@ function setMesh(mesh, ext) {
   g.setAttribute("color", new THREE.BufferAttribute(new Float32Array(nT * 9), 3));
   g.computeVertexNormals();
   meshObj = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55, metalness: 0.05 }));
-  scene.add(meshObj); recolor3D();
+  scene.add(meshObj); recolor3D(); mark3D();
 }
+let pending3D = 0;
 function recolor3D() {
+  if (pending3D) return;
+  pending3D = requestAnimationFrame(() => { pending3D = 0; recolor3DNow(); });
+}
+function recolor3DNow() {
   if (!meshObj) return;
   const cols = extColors().map(c => c ? new THREE.Color(c) : null);
   const ext = meshData.ext, col = meshObj.geometry.attributes.color.array, nT = col.length / 9;
   for (let t = 0; t < nT; t++) { const c = cols[ext ? ext[t] : 1] || cols[1]; for (let k = 0; k < 3; k++) { col[t * 9 + k * 3] = c.r; col[t * 9 + k * 3 + 1] = c.g; col[t * 9 + k * 3 + 2] = c.b; } }
-  meshObj.geometry.attributes.color.needsUpdate = true;
+  meshObj.geometry.attributes.color.needsUpdate = true; mark3D();
 }
 function frameCamera() {
   if (!S.base) return; const [x, y] = S.base.size, d = Math.max(x, y) * 1.35;
   camera.position.set(0, -d * 0.75, d * 0.9); controls.target.set(0, 0, 0); controls.update();
 }
 function show3DBase() { setMesh(S.base, null); frameCamera(); }
-(function loop() { requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); })();
+// rendu à la demande : uniquement quand la vue 3D est affichée et que quelque chose a changé
+let dirty3D = true;
+const mark3D = () => { dirty3D = true; };
+controls.addEventListener("change", mark3D);
+(function loop() {
+  requestAnimationFrame(loop);
+  if (!$("v3d").classList.contains("on")) return;
+  const moved = controls.update();
+  if (moved || dirty3D) { dirty3D = false; renderer.render(scene, camera); }
+})();
 
 document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
   document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("on", x === b));
   document.querySelectorAll(".view").forEach(v => v.classList.toggle("on", v.id === b.dataset.t));
-  if (b.dataset.t === "v2d") draw2D(true); else resize3D();
+  if (b.dataset.t === "v2d") draw2D(); else resize3D();
 });
 
 // ---------------- Génération ----------------
-function geomKey() { const r = S.rect; return [S.base && S.base.tri.length, S.base && S.base.size.join(), r.cx.toFixed(2), r.cy.toFixed(2), r.w.toFixed(2), r.rot.toFixed(4), $("res").value].join("|"); }
+function geomKey() { const r = S.rect; return [S.labVer || 0, S.base && S.base.tri.length, S.base && S.base.size.join(), r.cx.toFixed(2), r.cy.toFixed(2), r.w.toFixed(2), r.rot.toFixed(4), $("res").value].join("|"); }
 function invalidateGeom() {
   if (S.refined && S.refinedKey !== geomKey()) { $("stale").style.display = "block"; $("dl").disabled = true; }
   else if (S.refined) { $("stale").style.display = "none"; $("dl").disabled = false; }
@@ -925,6 +975,31 @@ function updateUI() {
   $("gen").disabled = !(S.base && S.img && S.labels) || S.busy;
   $("stats").textContent = S.refined ? (S.refined.tri.length / 3).toLocaleString("fr-FR") + " triangles · " + (extColors().length - 1) + " filaments" : "";
 }
+// Image intégrale des frontières de couleurs : un triangle n'est redécoupé que s'il touche une
+// frontière (ou le bord de l'image). Les grandes zones unies restent en gros triangles.
+function makeNeedSplit() {
+  const w = S.img.w, h = S.img.h, lab = S.labels, W1 = w + 1;
+  const ii = new Uint32Array(W1 * (h + 1));
+  for (let y = 0; y < h; y++) {
+    let row = 0;
+    for (let x = 0; x < w; x++) {
+      const i = y * w + x, l = lab[i];
+      const b = (x + 1 < w && lab[i + 1] !== l) || (y + 1 < h && lab[i + w] !== l) || (x > 0 && lab[i - 1] !== l) || (y > 0 && lab[i - w] !== l);
+      row += b ? 1 : 0;
+      ii[(y + 1) * W1 + x + 1] = ii[y * W1 + x + 1] + row;
+    }
+  }
+  const r = S.rect, cs = Math.cos(r.rot), sn = Math.sin(r.rot);
+  const toPx = (x, y) => { const dx = x - r.cx, dy = y - r.cy; return [((cs * dx + sn * dy) / r.w + 0.5) * w, (0.5 - (-sn * dx + cs * dy) / r.h) * h]; };
+  return (ax, ay, bx, by, cx, cy) => {
+    const A = toPx(ax, ay), B = toPx(bx, by), C = toPx(cx, cy);
+    let x0 = Math.floor(Math.min(A[0], B[0], C[0])) - 1, x1 = Math.ceil(Math.max(A[0], B[0], C[0])) + 1;
+    let y0 = Math.floor(Math.min(A[1], B[1], C[1])) - 1, y1 = Math.ceil(Math.max(A[1], B[1], C[1])) + 1;
+    if (x1 < 0 || y1 < 0 || x0 >= w || y0 >= h) return false;          // hors de l'image
+    if (x0 < 0 || y0 < 0 || x1 > w || y1 > h) return true;              // chevauche le bord de l'image
+    return ii[y1 * W1 + x1] - ii[y0 * W1 + x1] - ii[y1 * W1 + x0] + ii[y0 * W1 + x0] > 0;
+  };
+}
 $("gen").onclick = async () => {
   if (S.busy) return; S.busy = true; updateUI();
   const prog = $("prog"), bar = prog.firstElementChild; prog.style.display = "block"; bar.style.width = "3%";
@@ -933,11 +1008,12 @@ $("gen").onclick = async () => {
   try {
     const L = +$("res").value;
     const est = Math.ceil(Math.log2(Math.max(S.rect.w, S.rect.h, 50) / L)) + 2;
+    const needSplit = makeNeedSplit();
     const mesh = await refineMesh(S.base, S.rect, L, async (pass, n) => {
       bar.style.width = Math.min(90, 5 + 85 * (pass + 1) / est) + "%";
       $("genMsg").textContent = "Découpe du maillage… " + Math.round(n / 1000).toLocaleString("fr-FR") + " k triangles";
       await new Promise(r => setTimeout(r, 0));
-    });
+    }, 4e6, needSplit);
     S.refined = mesh; S.refinedKey = geomKey();
     S.ext = paintMesh(mesh, S.rect, S.labels, S.img.w, S.img.h, slotExt());
     bar.style.width = "100%";
