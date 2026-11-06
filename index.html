@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Atelier Coque — PS5 Slim</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&family=Anton&family=Bebas+Neue&family=Montserrat:wght@800&family=Orbitron:wght@800&family=Permanent+Marker&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#0c0e13; --panel:#13161d; --panel2:#191d26; --line:#252a35; --text:#e8eaf0; --muted:#8a91a3;
@@ -89,6 +89,26 @@
     aside{border-right:0;border-bottom:1px solid var(--line)}
     main{height:70vh}
   }
+
+  .swatch{width:30px;height:26px;border-radius:7px;border:1px solid #ffffff30;cursor:pointer;flex:none;padding:0}
+  .slot .fname{font-size:10.5px;color:var(--muted);display:block}
+  .pop{position:fixed;z-index:50;width:318px;max-height:420px;overflow:auto;background:#151923;border:1px solid #2d3445;border-radius:12px;padding:10px;box-shadow:0 18px 50px #000a}
+  .pop h4{margin:8px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .pop h4:first-child{margin-top:0}
+  .chips{display:grid;grid-template-columns:repeat(8,1fr);gap:5px}
+  .chip{aspect-ratio:1;border-radius:6px;border:1px solid #ffffff25;cursor:pointer;padding:0}
+  .chip:hover{outline:2px solid var(--accent2);outline-offset:1px}
+  .chip.sel{outline:2px solid #fff;outline-offset:1px}
+  .pop .free{display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+  .pop .hovername{font-size:12px;min-height:16px;margin-top:8px;color:var(--text)}
+  .textcard{background:#0f1218;border:1px solid var(--line);border-radius:9px;padding:8px;margin-bottom:8px}
+  .textcard.sel{border-color:var(--accent)}
+  .textcard input[type=text]{width:100%;background:#0b0d12;border:1px solid var(--line);border-radius:7px;padding:7px 9px;margin-bottom:6px}
+  .textcard .tr{display:grid;grid-template-columns:1.6fr .9fr .9fr auto auto;gap:6px;align-items:end}
+  .textcard .tr .field span{font-size:10.5px}
+  .textcard select,.textcard input[type=number]{padding:6px 7px}
+  .iconbtn{border:0;background:none;color:var(--muted);cursor:pointer;font-size:14px;padding:4px 6px;border-radius:6px}
+  .iconbtn:hover{color:var(--err);background:#2a1618}
 </style>
 <script type="importmap">
 {"imports":{
@@ -101,14 +121,17 @@
 <body>
 <div class="app">
 <aside>
-  <div class="brand"><div class="logo">◐</div><h1>Atelier Coque · PS5 Slim</h1></div>
+  <div class="brand"><div class="logo"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="none" stroke="#fff" stroke-width="1.6"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="#fff"/></svg></div><h1>Atelier Coque · PS5 Slim</h1></div>
   <p class="sub">Ton image → une coque multicolore prête à imprimer (.3mf).</p>
 
   <section class="step">
     <h2><span class="n">1</span>La coque</h2>
     <div class="parts" id="parts">
+      <div class="grp">Côté entier · une image pour haut + bas</div>
+      <button data-v="side:logo" class="on"><b>Côté logo PS</b><span>haut + bas · 218 × 357 mm</span></button>
+      <button data-v="side:autre"><b>Autre côté</b><span>haut + bas · 217 × 357 mm</span></button>
       <div class="grp">Côté logo PS</div>
-      <button data-v="petite-logo" class="on"><b>Haut</b><span>216 × 160 mm</span></button>
+      <button data-v="petite-logo"><b>Haut</b><span>216 × 160 mm</span></button>
       <button data-v="grande"><b>Bas</b><span>227 × 218 mm</span></button>
       <div class="grp">Autre côté</div>
       <button data-v="petite"><b>Haut</b><span>217 × 160 mm</span></button>
@@ -135,7 +158,7 @@
           <select id="face"><option value="+Z">Dessus (+Z)</option><option value="-Z">Dessous (−Z)</option><option value="+X">+X</option><option value="-X">−X</option><option value="+Y">+Y</option><option value="-Y">−Y</option></select></div>
       </div>
     </div>
-    <div class="row" style="margin-top:10px"><label>Orientation de la coque</label><button class="btn" id="spin">↻ Tourner 90°</button></div>
+    <div class="row" id="spinRow" style="margin-top:10px"><label>Orientation de la coque</label><button class="btn" id="spin">↻ Tourner 90°</button></div>
     <div class="msg" id="baseInfo"></div>
   </section>
 
@@ -143,23 +166,34 @@
     <h2><span class="n">2</span>Ton image</h2>
     <div class="drop" id="imgDrop"><span id="imgDropTxt">Dépose une image (PNG, JPG…) ou clique</span></div>
     <input type="file" id="imgIn" accept="image/*" class="hidden">
-    <p class="hint">Les dessins à aplats de couleurs donnent le meilleur rendu. La transparence d'un PNG garde la couleur de la coque.</p>
+    <p class="hint" id="imgHint">Les dessins à aplats de couleurs donnent le meilleur rendu. La transparence d'un PNG garde la couleur de la coque.</p>
   </section>
 
   <section class="step">
     <h2><span class="n">3</span>Couleurs</h2>
     <div class="row"><label>Nombre de couleurs de l'image</label><b id="kVal" class="tag">4</b></div>
     <input type="range" id="k" min="1" max="7" value="4">
-    <div class="row"><label>Couleur de la coque (filament 1)</label><input type="color" id="baseColor" value="#f1f1f3"></div>
+    <div class="row"><label>Couleur de la coque (filament 1)<span class="fname" id="baseName"></span></label><button class="swatch" id="baseSw" style="background:#f1f1f3"></button></div>
     <div class="row"><label>Lisser les petits détails</label><input type="checkbox" id="smooth" checked></div>
     <div class="slots" id="slots"></div>
-    <p class="hint">Change chaque pastille pour la couleur exacte de ton filament. « = coque » fusionne une couleur avec le fond (utile pour un fond blanc ou noir). ✕ supprime une couleur : ses zones prennent la couleur restante la plus proche.</p>
+    <div class="row" style="margin-top:10px">
+      <select id="snapType" style="flex:1"></select>
+      <button class="btn" id="snap">Couleurs Bambu</button>
+    </div>
+    <p class="hint">Clique une pastille pour choisir un vrai filament Bambu. « Couleurs Bambu » remplace toutes les couleurs par le filament le plus proche de la gamme choisie. « = coque » fusionne une couleur avec le fond, ✕ la supprime.</p>
   </section>
 
   <section class="step">
-    <h2><span class="n">4</span>Placement</h2>
+    <h2><span class="n">4</span>Textes</h2>
+    <div id="texts"></div>
+    <button class="btn" id="addText" style="width:100%">+ Ajouter un texte</button>
+    <p class="hint">Dans l'onglet Placement, glisse un texte pour le déplacer ; molette dessus pour changer sa taille.</p>
+  </section>
+
+  <section class="step">
+    <h2><span class="n">5</span>Placement de l'image</h2>
     <div class="row"><label>Largeur de l'image</label><b class="tag" id="wVal">–</b></div>
-    <input type="range" id="w" min="20" max="450" step="1" value="200">
+    <input type="range" id="w" min="20" max="600" step="1" value="200">
     <div class="row"><label>Rotation</label><b class="tag" id="rVal">0°</b></div>
     <input type="range" id="rot" min="-180" max="180" step="1" value="0">
     <div class="row">
@@ -172,11 +206,11 @@
   </section>
 
   <section class="step">
-    <h2><span class="n">5</span>Générer & exporter</h2>
+    <h2><span class="n">6</span>Générer & exporter</h2>
     <div class="grid2">
       <div class="field"><span>Finesse du motif</span>
         <select id="res">
-          <option value="0.4">0,4 mm — très fin (lourd)</option>
+          <option value="0.4">0,4 mm — très fin</option>
           <option value="0.6" selected>0,6 mm — recommandé</option>
           <option value="0.8">0,8 mm</option>
           <option value="1.2">1,2 mm — rapide</option>
@@ -189,13 +223,14 @@
     <div class="progress" id="prog"><div></div></div>
     <div class="msg" id="genMsg"></div>
     <div class="filaments" id="fils"></div>
+    <div id="amsNote"></div>
     <div style="margin-top:10px"><button class="btn go" id="dl" disabled>Télécharger le .3mf</button></div>
     <div class="msg" id="dlMsg"></div>
   </section>
 
   <section class="step">
     <h2>Imprimer</h2>
-    <p class="hint" style="margin-top:0"><b>Bambu Studio 2.9+</b> : à l'ouverture, une fenêtre montre tes couleurs exactes ; associe chacune à un filament et valide. <b>Orca, Prusa ou Bambu plus ancien</b> : la peinture est appliquée mais les filaments arrivent avec des couleurs au hasard, règle-les selon les pastilles F1, F2… Imprime la face décorée contre le plateau texturé pour un beau fini. Pour les clips, préfère le PETG ou l'ABS/ASA au PLA.</p>
+    <p class="hint" style="margin-top:0"><b>Bambu Studio 2.9+</b> : à l'ouverture, une fenêtre montre tes couleurs exactes ; associe chacune à un filament et valide. <b>Orca, Prusa ou Bambu plus ancien</b> : la peinture est appliquée mais les filaments arrivent avec des couleurs au hasard, règle-les selon les pastilles F1, F2… Imprime chaque coque <b>à plat</b>, face décorée vers le haut, une par plateau, supports en couleur de coque. En mode « côté entier », le .zip contient les deux coques. Pour les clips, préfère le PETG ou l'ABS/ASA au PLA.</p>
   </section>
 </aside>
 
@@ -203,6 +238,7 @@
   <div class="tabs">
     <button data-t="v2d" class="on">Placement</button>
     <button data-t="v3d">Aperçu 3D</button>
+    <button data-t="vcon">Console</button>
     <div class="spacer"></div>
     <div class="stats" id="stats"></div>
   </div>
@@ -215,8 +251,13 @@
     <div class="badge" id="stale">Réglages modifiés · régénère la 3D</div>
     <div class="overlay">Clic gauche : tourner · molette : zoom · clic droit : déplacer</div>
   </div>
+  <div class="view" id="vcon">
+    <canvas id="ccon"></canvas>
+    <div class="overlay" id="ovcon">Aperçu schématique : le corps de la console est simplifié. Les coques générées apparaissent avec leurs couleurs.</div>
+  </div>
 </main>
 </div>
+<div class="pop hidden" id="pop"></div>
 
 <script>
 // ================= CORE (géométrie, image, 3MF) =================
@@ -510,6 +551,23 @@ function paintMesh(mesh, rect, lab, lw, lh, slotExt) {
   return ext;
 }
 
+// ---- Variante générique : fn(x, y) renvoie le numéro de filament (>1) pour le centre d'un
+//      triangle tourné vers le haut, ou 0 pour garder la couleur de la coque.
+function paintMeshFn(mesh, fn) {
+  const { pos, tri } = mesh, nT = tri.length / 3, ext = new Uint8Array(nT).fill(1);
+  for (let t = 0; t < nT; t++) {
+    const a = tri[t * 3] * 3, b = tri[t * 3 + 1] * 3, c = tri[t * 3 + 2] * 3;
+    const ux = pos[b] - pos[a], uy = pos[b + 1] - pos[a + 1], uz = pos[b + 2] - pos[a + 2];
+    const vx = pos[c] - pos[a], vy = pos[c + 1] - pos[a + 1], vz = pos[c + 2] - pos[a + 2];
+    const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    const nl = Math.hypot(nx, ny, nz);
+    if (nl === 0 || nz / nl < NZ_MIN) continue;
+    const e = fn((pos[a] + pos[b] + pos[c]) / 3, (pos[a + 1] + pos[b + 1] + pos[c + 1]) / 3);
+    if (e > 0) ext[t] = e;
+  }
+  return ext;
+}
+
 // ---- Export 3MF (peinture multi-filament Bambu Studio / OrcaSlicer / PrusaSlicer) ----
 function paintCode(n) {          // format TriangleSelector : 1→"4", 2→"8", 3→"0C", 4→"1C"…
   if (n === 1) return "4";
@@ -588,27 +646,53 @@ function readmeText(colors, counts, sizeMM, mode) {
 
 
 </script>
+<script>
+const BAMBU_COLORS = {"PLA Basic":[["Orange","#FF6A13"],["Orange citrouille","#FF9016"],["Bleu gris","#5B6579"],["Bleu cobalt","#0056B8"],["Turquoise","#00B1B7"],["Cyan","#0086D6"],["Bleu","#0A2989"],["Gris","#8E9089"],["Argenté","#A6A9AA"],["Gris clair","#D1D3D5"],["Gris foncé","#545454"],["Vert gui","#3F8E43"],["Vert vif","#BECF00"],["Vert bambou","#00AE42"],["Noir","#000000"],["Marron","#9D432C"],["Marron cacao","#6F5034"],["Beige","#F7E6DE"],["Rose","#F55A74"],["Violet indigo","#482960"],["Violet","#5E43B7"],["Magenta","#EC008C"],["Rouge","#C12E1F"],["Rouge marron","#9D2235"],["Rose vif","#F5547C"],["Blanc de jade","#FFFFFF"],["Jaune","#F4EE2A"],["Jaune tournesol","#FEC600"],["Bronze","#847D48"],["Doré","#E4BD68"]],"PLA Matte":[["Mandarine","#F99963"],["Bleu ciel","#56B7E6"],["Bleu marine","#0078BF"],["Bleu glacier","#A3D8E1"],["Bleu foncé","#042F56"],["Gris nardo","#757575"],["Gris cendré","#9B9EA0"],["Vert pomme","#C2E189"],["Vert herbacé","#61C680"],["Vert foncé","#68724D"],["Anthracite","#000000"],["Chocolat noir","#4D3324"],["Marron latte","#D3B7A7"],["Marron foncé","#7D6556"],["Caramel","#AE835B"],["Rose sakura","#E8AFCF"],["Violet lilas","#AE96D4"],["Rouge écarlate","#DE4343"],["Terre cuite","#B15533"],["Prune","#950051"],["Rouge foncé","#BB3D43"],["Blanc ivoire","#FFFFFF"],["Blanc os","#CBC6B8"],["Jaune citron","#F7D959"],["Brun clair du désert","#E8DBB7"]],"PETG HF":[["Orange","#F75403"],["Bleu","#002E96"],["Bleu lac","#1F79E5"],["Gris","#ADB1B2"],["Gris foncé","#515151"],["Vert","#00AE42"],["Vert citron","#6EE53C"],["Vert forêt","#39541A"],["Noir","#000000"],["Marron cacahuète","#875718"],["Rouge","#BC0900"],["Blanc","#FFFFFF"],["Jaune","#FFD00B"],["Crème","#F9DFB9"]],"PETG Basic":[["Black","#000000"],["White","#FFFFFF"],["Gray","#7F7E83"],["Yellow","#FCE300"],["Red","#D6001C"],["Reflex Blue","#001489"],["Dark Brown","#4F2C1D"],["Green","#009639"],["Orange","#FF671F"],["Pine Green","#034638"],["Navy Blue","#0086D6"],["Misty Blue","#688197"],["Dark Beige","#DBC8B6"],["Purple","#8A75D1"],["Sunflower Yellow","#FFB81C"],["Bright Green","#97D700"],["Hot Pink","#F277C6"]],"PLA Silk+":[["Bleu layette","#A8C6EE"],["Bleu","#008BDA"],["Gris titane","#5F6367"],["Argenté","#C8C8C8"],["Vert bonbon","#018814"],["Menthe","#96DCB9"],["Violet","#8671CB"],["Rouge bonbon","#D02727"],["Doré rose","#BA9594"],["Rose","#F7ADA6"],["Blanc","#FFFFFF"],["Champagne","#F3CFB2"],["Doré","#F4A925"]]};
+const SIDE_LAYOUT = {"logo": {"size": [217.7, 357.3], "parts": [{"id": "petite-logo", "k": 2, "t": [-0.0, 98.48]}, {"id": "grande", "k": 3, "t": [0.0, -65.25]}]}, "autre": {"size": [217.1, 357.4], "parts": [{"id": "petite", "k": 2, "t": [-0.0, 98.85]}, {"id": "grande-fente", "k": 1, "t": [0.0, -64.0]}]}};
+</script>
 <script type="module">
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { zipSync, strToU8, unzlibSync } from "fflate";
 
 const $ = id => document.getElementById(id);
-const S = {
-  src: "petite-logo", rawSTL: null, stlName: "", face: "+Z", spin: 0,
-  base: null,                       // maillage orienté et centré
-  img: null,                        // {w,h,rgba}
-  centers: [], labels: null,        // labels finaux (après lissage)
-  slots: [],                        // [{color, merge}]
-  baseColor: "#f1f1f3",
-  rect: { cx: 0, cy: 0, w: 200, h: 120, rot: 0 },
-  refined: null, refinedKey: "", ext: null, busy: false,
-};
 const hex = c => "#" + c.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("");
 const hexRGB = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+const tick = () => new Promise(r => setTimeout(r, 0));
 
-// ---------------- Coque ----------------
-const BUILTIN = { "petite-logo": "Haut · côté logo PS", "grande": "Bas · côté logo PS", "petite": "Haut · autre côté", "grande-fente": "Bas · autre côté" };
+// =====================================================================================
+// État
+// =====================================================================================
+const S = {
+  src: "side:logo", rawSTL: null, stlName: "", face: "+Z", spin: 0,
+  pieces: [],                       // coques de l'espace de travail : {id, name, base, k, t:[x,y], spin}
+  frame: [200, 200],                // taille du cadre de travail (mm)
+  img: null, centers: [], labels: null, labVer: 0, slots: [],
+  baseColor: "#f1f1f3",
+  rect: { cx: 0, cy: 0, w: 200, h: 120, rot: 0 },
+  texts: [], sel: "img",
+  gen: null, genKey: "",            // {pieces:[{piece, mesh, ext}]}
+  results: {},                      // par id de coque : {mesh, ext, cols, spin} (pour l'aperçu console)
+  busy: false,
+};
+const PART_NAMES = { "petite-logo": "Haut · côté logo PS", "grande": "Bas · côté logo PS", "petite": "Haut · autre côté", "grande-fente": "Bas · autre côté" };
+const FILE_NAMES = { "petite-logo": "haut-cote-logo", "grande": "bas-cote-logo", "petite": "haut-autre-cote", "grande-fente": "bas-autre-cote" };
+const SIDE_NAMES = { logo: "Côté logo PS", autre: "Autre côté" };
+const FONTS = [
+  { n: "Inter", w: 800 }, { n: "Anton", w: 400 }, { n: "Bebas Neue", w: 400 },
+  { n: "Montserrat", w: 800 }, { n: "Orbitron", w: 800 }, { n: "Permanent Marker", w: 400 },
+];
+
+// Couleurs Bambu : index hex -> nom
+const BAMBU_BY_HEX = {};
+for (const [type, list] of Object.entries(BAMBU_COLORS)) for (const [name, h] of list) {
+  const k = h.toLowerCase(); if (!BAMBU_BY_HEX[k]) BAMBU_BY_HEX[k] = type + " · " + name;
+}
+const bambuName = h => BAMBU_BY_HEX[(h || "").toLowerCase()] || "";
+
+// =====================================================================================
+// Géométrie : coques et cadre de travail
+// =====================================================================================
 const partCache = {};
 async function loadPart(id) {
   if (partCache[id]) return partCache[id];
@@ -621,33 +705,49 @@ async function loadPart(id) {
   const buf = u8.buffer.slice(u8.byteOffset + 8, u8.byteOffset + 8 + nV * 12 + nT * 12);
   return (partCache[id] = { pos: Float64Array.from(new Float32Array(buf, 0, nV * 3)), tri: new Uint32Array(buf, nV * 12, nT * 3) });
 }
+const base0Cache = {};
+async function base0(id) { return base0Cache[id] || (base0Cache[id] = orientMesh(await loadPart(id), "+Z", 0)); }
+
+// coque -> cadre de travail : rotation de k quarts de tour puis translation t
+function toFrame(p, x, y) { for (let i = 0; i < p.k; i++) { const t = x; x = -y; y = t; } return [x + p.t[0], y + p.t[1]]; }
+
 let rebuildSeq = 0;
-async function rebuildBase() {
+async function rebuildWorkspace() {
   const seq = ++rebuildSeq;
+  const info = $("baseInfo");
   try {
-    let raw;
-    if (BUILTIN[S.src]) {
-      $("baseInfo").className = "msg"; $("baseInfo").textContent = "Chargement du modèle…";
-      raw = await loadPart(S.src);
-      if (seq !== rebuildSeq) return;
-      S.base = orientMesh(raw, "+Z", S.spin);
+    info.className = "msg"; info.textContent = "Chargement…";
+    let pieces = [], frame;
+    if (S.src.startsWith("side:")) {
+      const L = SIDE_LAYOUT[S.src.slice(5)];
+      for (const p of L.parts) pieces.push({ id: p.id, name: PART_NAMES[p.id], base: await base0(p.id), k: p.k, t: p.t, spin: 0 });
+      frame = L.size;
+    } else if (PART_NAMES[S.src]) {
+      const base = orientMesh(await loadPart(S.src), "+Z", S.spin);
+      pieces = [{ id: S.src, name: PART_NAMES[S.src], base, k: 0, t: [0, 0], spin: S.spin }]; frame = base.size.slice(0, 2);
     } else if (S.src === "demo") {
-      raw = makeDemoPlate(+$("dL").value || 340, +$("dW").value || 190, +$("dT").value || 2.4, +$("dR").value || 0, +$("dC").value || 0, 4);
-      S.base = orientMesh(raw, "+Z", S.spin);
+      const base = orientMesh(makeDemoPlate(+$("dL").value || 340, +$("dW").value || 190, +$("dT").value || 2.4, +$("dR").value || 0, +$("dC").value || 0, 4), "+Z", S.spin);
+      pieces = [{ id: "demo", name: "Plaque de test", base, k: 0, t: [0, 0], spin: S.spin }]; frame = base.size.slice(0, 2);
     } else {
-      if (!S.rawSTL) { S.base = null; $("baseInfo").textContent = "Aucun STL chargé."; draw2D(true); show3DBase(); updateUI(); return; }
-      S.base = orientMesh(S.rawSTL, S.face, S.spin);
+      if (!S.rawSTL) { if (seq === rebuildSeq) { S.pieces = []; info.textContent = "Aucun STL chargé."; afterWorkspace(); } return; }
+      const base = orientMesh(S.rawSTL, S.face, S.spin);
+      pieces = [{ id: "stl", name: S.stlName, base, k: 0, t: [0, 0], spin: S.spin }]; frame = base.size.slice(0, 2);
     }
-    const [x, y, z] = S.base.size;
-    const big = Math.max(x, y) > 256;
-    $("baseInfo").className = "msg" + (big ? "" : " ok");
-    $("baseInfo").innerHTML = (S.src === "stl" ? "<b>" + S.stlName + "</b> · " : BUILTIN[S.src] ? "<b>" + BUILTIN[S.src] + "</b> · " : "") + x.toFixed(1) + " × " + y.toFixed(1) + " × " + z.toFixed(1) + " mm · " +
-      (S.base.tri.length / 3).toLocaleString("fr-FR") + " triangles" +
-      (big ? '<div class="note warn">Plus grand que 256 mm : il faut une imprimante grand format (ex. 350 mm) ou découper la coque dans le slicer.</div>' : "");
-  } catch (e) { S.base = null; $("baseInfo").className = "msg err"; $("baseInfo").textContent = e.message; }
-  if (S.img && S.base) fitImage();
-  invalidateGeom();
-  draw2D(true); show3DBase(); updateUI();
+    if (seq !== rebuildSeq) return;
+    S.pieces = pieces; S.frame = frame;
+    const tris = pieces.reduce((a, p) => a + p.base.tri.length / 3, 0);
+    const big = pieces.some(p => Math.max(p.base.size[0], p.base.size[1]) > 256);
+    info.className = "msg" + (big ? "" : " ok");
+    info.innerHTML = "<b>" + (S.src.startsWith("side:") ? SIDE_NAMES[S.src.slice(5)] + " (2 coques)" : pieces[0].name) + "</b> · " +
+      frame[0].toFixed(0) + " × " + frame[1].toFixed(0) + " mm · " + tris.toLocaleString("fr-FR") + " triangles" +
+      (big ? '<div class="note warn">Plus grand que 256 mm : il faut une imprimante grand format ou découper la coque dans le slicer.</div>' : "");
+  } catch (e) { if (seq !== rebuildSeq) return; S.pieces = []; info.className = "msg err"; info.textContent = e.message; }
+  afterWorkspace();
+}
+function afterWorkspace() {
+  if (S.img && S.pieces.length) fitImage(); else syncPlaceUI();
+  silBuilt = null;
+  invalidateGeom(); draw2D(); show3DPieces(); updateUI();
 }
 
 document.querySelectorAll("#parts button").forEach(b => b.onclick = () => {
@@ -655,11 +755,12 @@ document.querySelectorAll("#parts button").forEach(b => b.onclick = () => {
   S.src = b.dataset.v; S.spin = 0;
   $("demoBox").classList.toggle("hidden", S.src !== "demo");
   $("stlBox").classList.toggle("hidden", S.src !== "stl");
-  rebuildBase();
+  $("spinRow").classList.toggle("hidden", S.src.startsWith("side:"));
+  rebuildWorkspace();
 });
-["dL", "dW", "dT", "dR", "dC"].forEach(id => $(id).addEventListener("change", rebuildBase));
-$("face").onchange = () => { S.face = $("face").value; rebuildBase(); };
-$("spin").onclick = () => { S.spin = (S.spin + 1) % 4; rebuildBase(); };
+["dL", "dW", "dT", "dR", "dC"].forEach(id => $(id).addEventListener("change", rebuildWorkspace));
+$("face").onchange = () => { S.face = $("face").value; rebuildWorkspace(); };
+$("spin").onclick = () => { S.spin = (S.spin + 1) % 4; rebuildWorkspace(); };
 
 function wireDrop(drop, input, onFile) {
   drop.onclick = () => input.click();
@@ -674,10 +775,12 @@ wireDrop($("stlDrop"), $("stlIn"), async file => {
     S.rawSTL = parseSTL(await file.arrayBuffer()); S.stlName = file.name; S.spin = 0;
     $("stlDrop").innerHTML = "✓ <b>" + file.name + "</b> — clique pour changer";
   } catch (e) { S.rawSTL = null; $("baseInfo").className = "msg err"; $("baseInfo").textContent = e.message; return; }
-  rebuildBase();
+  rebuildWorkspace();
 });
 
-// ---------------- Image ----------------
+// =====================================================================================
+// Image et couleurs
+// =====================================================================================
 wireDrop($("imgDrop"), $("imgIn"), file => {
   const url = URL.createObjectURL(file), im = new Image();
   im.onload = () => {
@@ -687,7 +790,7 @@ wireDrop($("imgDrop"), $("imgIn"), file => {
     const cx = cv.getContext("2d"); cx.drawImage(im, 0, 0, w, h);
     S.img = { w, h, rgba: cx.getImageData(0, 0, w, h).data };
     $("imgDrop").innerHTML = '<img src="' + url + '">' + file.name + " · " + im.width + "×" + im.height;
-    S.rect.rot = 0; $("rot").value = 0;
+    S.rect.rot = 0; S.sel = "img";
     quantize(); fitImage(); invalidateGeom(); draw2D(); updateUI();
   };
   im.onerror = () => { $("imgDropTxt").textContent = "Image illisible, essaie un PNG ou JPG."; };
@@ -696,43 +799,44 @@ wireDrop($("imgDrop"), $("imgIn"), file => {
 
 function quantize() {
   if (!S.img) return;
-  const k = +$("k").value;
-  const prev = S.slots;
+  const k = +$("k").value, prev = S.slots;
   S.centers = kmeans(S.img.rgba, k);
   let lab = labelPixels(S.img.rgba, S.centers);
   if ($("smooth").checked) lab = smoothLabels(lab, S.img.w, S.img.h, S.centers.length);
-  S.labels = lab; S.labVer = (S.labVer || 0) + 1;
+  S.labels = lab; S.labVer++;
   S.slots = S.centers.map((c, i) => ({ color: hex(c), merge: prev[i] && prev.length === S.centers.length ? prev[i].merge : false }));
   renderSlots(); buildQuantCanvas(); repaintIfPossible();
 }
-function slotExt() {           // label -> numéro de filament
-  let n = 2;
-  return S.slots.map(s => s.merge ? 1 : n++);
-}
-function extColors() {          // index filament -> couleur
+// Filaments : F1 = coque, puis les couleurs de l'image, puis celles des textes (réutilisées si identiques)
+function filaments() {
   const cols = ["", S.baseColor];
-  S.slots.forEach(s => { if (!s.merge) cols.push(s.color); });
-  return cols;
+  const idx = c => { const i = cols.findIndex((x, j) => j > 0 && x.toLowerCase() === c.toLowerCase()); if (i > 0) return i; cols.push(c); return cols.length - 1; };
+  const slotExt = S.slots.map(s => s.merge ? 1 : idx(s.color));     // couleurs identiques -> même filament
+  const textExt = S.texts.map(t => idx(t.color));
+  return { cols, slotExt, textExt };
 }
 function renderSlots() {
   const counts = new Array(S.centers.length).fill(0); let tot = 0;
   if (S.labels) for (const l of S.labels) if (l >= 0) { counts[l]++; tot++; }
   const box = $("slots"); box.innerHTML = "";
-  const se = slotExt();
+  const fm = filaments();
   S.slots.forEach((s, i) => {
     const d = document.createElement("div"); d.className = "slot";
-    d.innerHTML = '<input type="color" value="' + s.color + '"><span class="nm">' + (s.merge ? "→ Filament 1 (coque)" : "Filament " + se[i]) +
-      '</span><span class="pct">' + (tot ? (100 * counts[i] / tot).toFixed(1) : 0) + '%</span><label><input type="checkbox" ' + (s.merge ? "checked" : "") + '>= coque</label>' +
+    d.innerHTML = '<button class="swatch" style="background:' + s.color + '"></button><span class="nm">' + (s.merge ? "→ Filament 1 (coque)" : "Filament " + fm.slotExt[i]) +
+      '<span class="fname">' + (s.merge ? "" : bambuName(s.color)) + '</span></span><span class="pct">' + (tot ? (100 * counts[i] / tot).toFixed(1) : 0) +
+      '%</span><label><input type="checkbox" ' + (s.merge ? "checked" : "") + '>= coque</label>' +
       '<button class="del" title="Supprimer cette couleur : ses zones prennent la couleur restante la plus proche"' + (S.slots.length <= 1 ? " disabled" : "") + '>✕</button>';
-    d.querySelector("input[type=color]").oninput = e => { s.color = e.target.value; buildQuantCanvas(); draw2D(); recolor3D(); renderFils(); };
+    d.querySelector(".swatch").onclick = e => openPicker(e.currentTarget, s.color, c => { s.color = c; colorsChanged(); });
     d.querySelector("input[type=checkbox]").onchange = e => { s.merge = e.target.checked; renderSlots(); buildQuantCanvas(); draw2D(); repaintIfPossible(); updateUI(); };
     d.querySelector(".del").onclick = () => removeSlot(i);
     box.appendChild(d);
   });
+  $("baseSw").style.background = S.baseColor; $("baseName").textContent = bambuName(S.baseColor);
   renderFils();
 }
-// Supprime une couleur : chaque pixel concerné prend la couleur restante la plus proche
-// de sa couleur d'origine dans l'image.
+function colorsChanged() {      // couleurs seulement : pas de nouvelle découpe nécessaire
+  renderSlots(); renderTexts(false); buildQuantCanvas(); draw2D(); repaintIfPossible(); updateUI();
+}
 function removeSlot(idx) {
   if (S.slots.length <= 1 || !S.labels) return;
   const keep = S.centers.map((c, i) => i).filter(i => i !== idx);
@@ -740,8 +844,7 @@ function removeSlot(idx) {
   keep.forEach((old, n) => { remap[old] = n; });
   const rgba = S.img.rgba, lab = S.labels;
   for (let p = 0; p < lab.length; p++) {
-    const l = lab[p];
-    if (l < 0) continue;
+    const l = lab[p]; if (l < 0) continue;
     if (l !== idx) { lab[p] = remap[l]; continue; }
     let best = 0, bd = Infinity;
     for (let n = 0; n < keep.length; n++) {
@@ -751,20 +854,73 @@ function removeSlot(idx) {
     }
     lab[p] = best;
   }
-  S.labVer = (S.labVer || 0) + 1;
-  S.centers = keep.map(i => S.centers[i]);
-  S.slots = keep.map(i => S.slots[i]);
+  S.labVer++;
+  S.centers = keep.map(i => S.centers[i]); S.slots = keep.map(i => S.slots[i]);
   $("k").value = S.centers.length; $("kVal").textContent = S.centers.length;
-  renderSlots(); buildQuantCanvas(); draw2D(); repaintIfPossible(); updateUI();
+  renderSlots(); buildQuantCanvas(); draw2D(); invalidateGeom(); updateUI();
 }
 function renderFils() {
-  const cols = extColors();
-  $("fils").innerHTML = cols.slice(1).map((c, i) => '<span class="fil"><i style="background:' + c + '"></i>F' + (i + 1) + (i === 0 ? " coque" : "") + "</span>").join("");
+  const { cols } = filaments();
+  $("fils").innerHTML = cols.slice(1).map((c, i) => '<span class="fil" title="' + (bambuName(c) || c) + '"><i style="background:' + c + '"></i>F' + (i + 1) + (i === 0 ? " coque" : "") + "</span>").join("");
+  const n = cols.length - 1;
+  $("amsNote").innerHTML = n > 4 ? '<div class="note warn">' + n + " filaments : plus que les 4 emplacements d'un AMS. Fusionne ou supprime " + (n - 4) + " couleur" + (n - 4 > 1 ? "s" : "") + " (ou utilise plusieurs AMS).</div>" : "";
 }
 $("k").oninput = () => { $("kVal").textContent = $("k").value; };
-$("k").onchange = () => { quantize(); draw2D(); };
-$("smooth").onchange = () => { quantize(); draw2D(); };
-$("baseColor").oninput = () => { S.baseColor = $("baseColor").value; buildQuantCanvas(); draw2D(); recolor3D(); renderFils(); };
+$("k").onchange = () => { quantize(); draw2D(); invalidateGeom(); };
+$("smooth").onchange = () => { quantize(); draw2D(); invalidateGeom(); };
+$("baseSw").onclick = e => openPicker(e.currentTarget, S.baseColor, c => { S.baseColor = c; tint = null; colorsChanged(); });
+
+// --- « Couleurs Bambu » : chaque couleur -> filament le plus proche de la gamme choisie
+for (const type of Object.keys(BAMBU_COLORS)) { const o = document.createElement("option"); o.value = o.textContent = type; $("snapType").appendChild(o); }
+// distance perceptuelle (CIELAB, ΔE94) : plus fidèle à l'œil qu'une distance RGB
+function lab(h) {
+  const f = v => { v /= 255; return v > 0.04045 ? ((v + 0.055) / 1.055) ** 2.4 : v / 12.92; };
+  const [r, g, b] = hexRGB(h).map(f);
+  const X = (r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047, Y = r * 0.2126 + g * 0.7152 + b * 0.0722, Z = (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883;
+  const F = t => t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116;
+  return [116 * F(Y) - 16, 500 * (F(X) - F(Y)), 200 * (F(Y) - F(Z))];
+}
+function dE(h1, h2) {
+  const [L1, a1, b1] = lab(h1), [L2, a2, b2] = lab(h2);
+  const C1 = Math.hypot(a1, b1), C2 = Math.hypot(a2, b2), dC = C1 - C2, dL = L1 - L2;
+  const dH2 = Math.max(0, (a1 - a2) ** 2 + (b1 - b2) ** 2 - dC * dC);
+  return Math.sqrt(dL * dL + (dC / (1 + 0.045 * C1)) ** 2 + dH2 / (1 + 0.015 * C1) ** 2);
+}
+function nearestBambu(h, type) {
+  let best = h, bd = Infinity;
+  for (const [, c] of BAMBU_COLORS[type]) { const d = dE(h, c); if (d < bd) { bd = d; best = c; } }
+  return best;
+}
+$("snap").onclick = () => {
+  const type = $("snapType").value;
+  S.baseColor = nearestBambu(S.baseColor, type); tint = null;
+  S.slots.forEach(s => { s.color = nearestBambu(s.color, type); });
+  S.texts.forEach(t => { t.color = nearestBambu(t.color, type); t._tint = null; });
+  colorsChanged();
+};
+
+// --- sélecteur de couleur : vrais filaments Bambu + couleur libre
+const pop = $("pop"); let popCb = null;
+function openPicker(anchor, current, cb) {
+  popCb = cb;
+  let html = "";
+  for (const [type, list] of Object.entries(BAMBU_COLORS)) {
+    html += "<h4>" + type + '</h4><div class="chips">' + list.map(([n, c]) => '<button class="chip' + (c.toLowerCase() === current.toLowerCase() ? " sel" : "") +
+      '" style="background:' + c + '" data-c="' + c + '" data-n="' + type + " · " + n + '" title="' + n + '"></button>').join("") + "</div>";
+  }
+  html += '<div class="hovername" id="popName">' + (bambuName(current) || "Couleur libre " + current) + '</div><div class="free">Couleur libre <input type="color" id="popFree" value="' + current + '"></div>';
+  pop.innerHTML = html; pop.classList.remove("hidden");
+  const r = anchor.getBoundingClientRect();
+  pop.style.left = Math.min(window.innerWidth - 330, r.left) + "px";
+  pop.style.top = Math.max(8, Math.min(window.innerHeight - 430, r.bottom + 6)) + "px";
+  pop.querySelectorAll(".chip").forEach(ch => {
+    ch.onmouseenter = () => { $("popName").textContent = ch.dataset.n; };
+    ch.onclick = () => { closePicker(); cb(ch.dataset.c); };
+  });
+  $("popFree").oninput = e => cb(e.target.value);
+}
+function closePicker() { pop.classList.add("hidden"); popCb = null; }
+document.addEventListener("pointerdown", e => { if (!pop.classList.contains("hidden") && !pop.contains(e.target) && !e.target.classList.contains("swatch")) closePicker(); });
 
 let qcv = null;
 function buildQuantCanvas() {
@@ -780,19 +936,86 @@ function buildQuantCanvas() {
   cx.putImageData(id, 0, 0);
 }
 
-// ---------------- Placement ----------------
+// =====================================================================================
+// Textes
+// =====================================================================================
+let textSeq = 0;
+$("addText").onclick = async () => {
+  const t = { id: "t" + (++textSeq), text: "TEXTE", font: "Anton", size: 24, color: "#f2f2f2", cx: 0, cy: 0, rot: 0 };
+  S.texts.push(t); S.sel = t.id;
+  await renderTextMask(t); renderTexts(true); textsChanged();
+};
+async function renderTextMask(t) {
+  const f = FONTS.find(f => f.n === t.font) || FONTS[0];
+  try { await document.fonts.load(f.w + ' 80px "' + f.n + '"', t.text || "A"); } catch (e) { }
+  const K = 8, px = Math.max(4, t.size * K), font = f.w + " " + px + 'px "' + f.n + '", sans-serif';
+  let c = document.createElement("canvas"), x = c.getContext("2d"); x.font = font;
+  const txt = t.text || " ", m = x.measureText(txt);
+  const asc = m.actualBoundingBoxAscent || px * 0.75, desc = m.actualBoundingBoxDescent || px * 0.2;
+  const left = m.actualBoundingBoxLeft || 0, right = m.actualBoundingBoxRight || m.width;
+  const W = Math.max(2, Math.ceil(left + right) + 4), H = Math.max(2, Math.ceil(asc + desc) + 4);
+  c.width = W; c.height = H; x = c.getContext("2d"); x.font = font; x.fillStyle = "#fff"; x.textBaseline = "alphabetic";
+  x.fillText(txt, 2 + left, 2 + asc);
+  const a = x.getImageData(0, 0, W, H).data, mask = new Uint8Array(W * H);
+  for (let i = 0; i < mask.length; i++) mask[i] = a[i * 4 + 3] > 127 ? 1 : 0;
+  t._m = { cv: c, mask, W, H, K, wmm: W / K, hmm: H / K }; t._tint = null;
+}
+function inText(t, x, y) {
+  const m = t._m; if (!m) return false;
+  const dx = x - t.cx, dy = y - t.cy, cs = Math.cos(t.rot), sn = Math.sin(t.rot);
+  const px = Math.floor((cs * dx + sn * dy + m.wmm / 2) * m.K), py = Math.floor((m.hmm / 2 - (-sn * dx + cs * dy)) * m.K);
+  return px >= 0 && py >= 0 && px < m.W && py < m.H && m.mask[py * m.W + px] === 1;
+}
+function textBox(t) {                 // boîte englobante dans le cadre de travail
+  const m = t._m || { wmm: 0, hmm: 0 }, cs = Math.abs(Math.cos(t.rot)), sn = Math.abs(Math.sin(t.rot));
+  const ex = cs * m.wmm / 2 + sn * m.hmm / 2, ey = sn * m.wmm / 2 + cs * m.hmm / 2;
+  return [t.cx - ex, t.cy - ey, t.cx + ex, t.cy + ey];
+}
+function renderTexts(full) {
+  const box = $("texts");
+  if (!full) {      // simple mise à jour des pastilles / sélection
+    S.texts.forEach(t => {
+      const card = box.querySelector('[data-id="' + t.id + '"]'); if (!card) return;
+      card.classList.toggle("sel", S.sel === t.id);
+      card.querySelector(".swatch").style.background = t.color;
+    });
+    return;
+  }
+  box.innerHTML = "";
+  S.texts.forEach(t => {
+    const d = document.createElement("div"); d.className = "textcard" + (S.sel === t.id ? " sel" : ""); d.dataset.id = t.id;
+    d.innerHTML = '<input type="text" maxlength="40" value="' + t.text.replace(/"/g, "&quot;") + '">' +
+      '<div class="tr"><div class="field"><span>Police</span><select>' + FONTS.map(f => '<option' + (f.n === t.font ? " selected" : "") + ' style="font-family:\'' + f.n + '\'">' + f.n + "</option>").join("") + "</select></div>" +
+      '<div class="field"><span>Taille (mm)</span><input type="number" class="sz" min="4" max="150" step="1" value="' + t.size + '"></div>' +
+      '<div class="field"><span>Rotation°</span><input type="number" class="rt" min="-180" max="180" step="5" value="' + Math.round(t.rot * 180 / Math.PI) + '"></div>' +
+      '<button class="swatch" style="background:' + t.color + '" title="Couleur"></button><button class="iconbtn" title="Supprimer">✕</button></div>';
+    const [inp] = d.querySelectorAll("input[type=text]");
+    inp.oninput = async () => { t.text = inp.value; await renderTextMask(t); textsChanged(); };
+    inp.onfocus = () => { S.sel = t.id; renderTexts(false); draw2D(); };
+    d.querySelector("select").onchange = async e => { t.font = e.target.value; await renderTextMask(t); textsChanged(); };
+    d.querySelector(".sz").onchange = async e => { t.size = Math.max(4, Math.min(150, +e.target.value || 20)); await renderTextMask(t); textsChanged(); };
+    d.querySelector(".rt").onchange = e => { t.rot = (+e.target.value || 0) * Math.PI / 180; textsChanged(); };
+    d.querySelector(".swatch").onclick = e => openPicker(e.currentTarget, t.color, c => { t.color = c; t._tint = null; colorsChanged(); });
+    d.querySelector(".iconbtn").onclick = () => { S.texts = S.texts.filter(x => x !== t); if (S.sel === t.id) S.sel = "img"; renderTexts(true); textsChanged(); };
+    box.appendChild(d);
+  });
+}
+function textsChanged() { renderFils(); renderSlots(); draw2D(); invalidateGeom(); updateUI(); }
+
+// =====================================================================================
+// Placement
+// =====================================================================================
 function setRect(p) { Object.assign(S.rect, p); if (S.img) S.rect.h = S.rect.w * S.img.h / S.img.w; syncPlaceUI(); invalidateGeom(); draw2D(); }
 function syncPlaceUI() {
-  $("w").value = Math.round(S.rect.w); $("wVal").textContent = Math.round(S.rect.w) + " × " + Math.round(S.rect.h) + " mm";
+  $("w").value = Math.round(S.rect.w); $("wVal").textContent = S.img ? Math.round(S.rect.w) + " × " + Math.round(S.rect.h) + " mm" : "–";
   const deg = Math.round(S.rect.rot * 180 / Math.PI); $("rot").value = deg; $("rVal").textContent = deg + "°";
 }
 function fitImage(cover) {
-  if (!S.img || !S.base) return;
-  const [bw, bh] = S.base.size, ar = S.img.w / S.img.h;
+  if (!S.img || !S.pieces.length) return;
+  const [bw, bh] = S.frame, ar = S.img.w / S.img.h;
   const rotated = Math.abs(Math.sin(S.rect.rot)) > 0.7;
   const W = rotated ? bh : bw, H = rotated ? bw : bh;
-  // image aux proportions de la coque (à 5 % près) : on couvre automatiquement
-  if (cover === undefined) cover = Math.abs(ar / (W / H) - 1) < 0.05;
+  if (cover === undefined) cover = Math.abs(ar / (W / H) - 1) < 0.05;      // mêmes proportions : on couvre
   const w = cover ? Math.max(W, H * ar) : Math.min(0.85 * W, 0.85 * H * ar);
   setRect({ cx: 0, cy: 0, w });
 }
@@ -803,17 +1026,18 @@ $("fit").onclick = () => fitImage(false);
 $("cover").onclick = () => fitImage(true);
 $("r90").onclick = () => { let d = Math.round(S.rect.rot * 180 / Math.PI) + 90; if (d > 180) d -= 360; setRect({ rot: d * Math.PI / 180 }); };
 
-// ---------------- Vue 2D ----------------
-const c2d = $("c2d"); let sil = null, tmp2D = null, view = { s: 1, ox: 0, oy: 0 };
+// =====================================================================================
+// Vue 2D
+// =====================================================================================
+const c2d = $("c2d"); const view = { s: 1, ox: 0, oy: 0 };
+let silBuilt = null, tint = null, tmp2D = null, pending2D = 0;
 function size2D() {
   const r = c2d.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
   const w = Math.max(10, Math.round(r.width * dpr)), h = Math.max(10, Math.round(r.height * dpr));
   if (c2d.width !== w) c2d.width = w;
   if (c2d.height !== h) c2d.height = h;
 }
-let pending2D = 0, pendingSil = false, tint = null;
-// Silhouette vue de dessus, rastérisée une seule fois par coque (4 px/mm) : bien plus rapide que
-// de tracer des centaines de milliers de triangles avec le canvas.
+// silhouette vue de dessus de chaque coque, rastérisée une fois (4 px/mm)
 const silCache = new WeakMap();
 function silMask(base) {
   if (silCache.has(base)) return silCache.get(base);
@@ -823,245 +1047,384 @@ function silMask(base) {
   for (let t = 0; t < tri.length; t += 3) {
     const a = tri[t] * 3, b = tri[t + 1] * 3, c = tri[t + 2] * 3;
     const ax = (pos[a] - x0) * k, ay = (y1 - pos[a + 1]) * k, bx = (pos[b] - x0) * k, by = (y1 - pos[b + 1]) * k, cx = (pos[c] - x0) * k, cy = (y1 - pos[c + 1]) * k;
-    const area = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
-    if (area >= 0) continue;                       // seulement les faces tournées vers le haut (repère écran inversé)
+    if ((bx - ax) * (cy - ay) - (by - ay) * (cx - ax) >= 0) continue;
     const minX = Math.max(0, Math.floor(Math.min(ax, bx, cx))), maxX = Math.min(W - 1, Math.ceil(Math.max(ax, bx, cx)));
     const minY = Math.max(0, Math.floor(Math.min(ay, by, cy))), maxY = Math.min(H - 1, Math.ceil(Math.max(ay, by, cy)));
     m[Math.min(H - 1, Math.max(0, ay | 0)) * W + Math.min(W - 1, Math.max(0, ax | 0))] = 1;
     for (let y = minY; y <= maxY; y++) for (let x = minX; x <= maxX; x++) {
       const px = x + 0.5, py = y + 0.5;
-      const w0 = (bx - ax) * (py - ay) - (by - ay) * (px - ax), w1 = (cx - bx) * (py - by) - (cy - by) * (px - bx), w2 = (ax - cx) * (py - cy) - (ay - cy) * (px - cx);
-      if (w0 <= 0.5 && w1 <= 0.5 && w2 <= 0.5) m[y * W + x] = 1;
+      if ((bx - ax) * (py - ay) - (by - ay) * (px - ax) <= 0.5 && (cx - bx) * (py - by) - (cy - by) * (px - bx) <= 0.5 && (ax - cx) * (py - cy) - (ay - cy) * (px - cx) <= 0.5) m[y * W + x] = 1;
     }
   }
   const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
-  const cx2 = cv.getContext("2d"), id = cx2.createImageData(W, H);
-  for (let i = 0; i < m.length; i++) if (m[i] || (m[i - 1] && m[i + 1]) || (m[i - W] && m[i + W])) { id.data[i * 4] = id.data[i * 4 + 1] = id.data[i * 4 + 2] = id.data[i * 4 + 3] = 255; }
-  cx2.putImageData(id, 0, 0);
-  Object.assign(cv, { k, x0, y1 });
-  silCache.set(base, cv);
+  const g = cv.getContext("2d"), id = g.createImageData(W, H);
+  for (let i = 0; i < m.length; i++) if (m[i] || (m[i - 1] && m[i + 1]) || (m[i - W] && m[i + W])) id.data[i * 4] = id.data[i * 4 + 1] = id.data[i * 4 + 2] = id.data[i * 4 + 3] = 255;
+  g.putImageData(id, 0, 0);
+  Object.assign(cv, { k, x0, y1 }); silCache.set(base, cv);
   return cv;
 }
-function draw2D(rebuildSil) {           // regroupe les redessins : au plus un par image affichée
-  if (rebuildSil) pendingSil = true;
+function draw2D() {
   if (pending2D) return;
-  pending2D = requestAnimationFrame(() => { pending2D = 0; const r = pendingSil; pendingSil = false; draw2DNow(r); });
+  pending2D = requestAnimationFrame(() => { pending2D = 0; draw2DNow(); });
 }
-function draw2DNow(rebuildSil) {
-  if (!$("v2d").classList.contains("on")) { if (rebuildSil) sil = null; return; }
+const sx = x => view.ox + x * view.s, sy = y => view.oy - y * view.s;
+function draw2DNow() {
+  if (!$("v2d").classList.contains("on")) return;
   size2D();
   const W = c2d.width, H = c2d.height, ctx = c2d.getContext("2d"), dpr = window.devicePixelRatio || 1;
   ctx.fillStyle = "#0c0e13"; ctx.fillRect(0, 0, W, H);
-  // grille
   ctx.strokeStyle = "#151924"; ctx.lineWidth = 1;
   for (let x = 0; x < W; x += 24 * dpr) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
   for (let y = 0; y < H; y += 24 * dpr) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
-  if (!S.base) return;
-  const [bw, bh] = S.base.size;
-  view.s = Math.min((W - 80 * dpr) / bw, (H - 80 * dpr) / bh); view.ox = W / 2; view.oy = H / 2;
-  if (rebuildSil || !sil || sil.width !== W || sil.height !== H || sil.base !== S.base) {
-    const m = silMask(S.base);
-    sil = sil || document.createElement("canvas"); sil.width = W; sil.height = H; sil.base = S.base; tint = null;
-    const sx = sil.getContext("2d"); sx.clearRect(0, 0, W, H); sx.imageSmoothingEnabled = true;
-    sx.drawImage(m, view.ox + m.x0 * view.s, view.oy - m.y1 * view.s, m.width / m.k * view.s, m.height / m.k * view.s);
+  if (!S.pieces.length) return;
+  const [fw, fh] = S.frame;
+  view.s = Math.min((W - 80 * dpr) / fw, (H - 80 * dpr) / fh); view.ox = W / 2; view.oy = H / 2;
+  const key = S.pieces.map(p => p.id + p.spin).join() + "|" + W + "x" + H + "|" + view.s;
+  if (!silBuilt || silBuilt.key !== key) {
+    const c = silBuilt && silBuilt.width === W && silBuilt.height === H ? silBuilt : document.createElement("canvas");
+    c.width = W; c.height = H; c.key = key; tint = null;
+    const g = c.getContext("2d"); g.clearRect(0, 0, W, H);
+    for (const p of S.pieces) {
+      const m = silMask(p.base);
+      g.save(); g.translate(sx(p.t[0]), sy(p.t[1])); g.rotate(-p.k * Math.PI / 2);
+      g.drawImage(m, m.x0 * view.s, -m.y1 * view.s, m.width / m.k * view.s, m.height / m.k * view.s); g.restore();
+    }
+    silBuilt = c;
   }
-  if (!tint || tint.color !== S.baseColor || tint.width !== W || tint.height !== H) {
-    tint = tint || document.createElement("canvas"); tint.width = W; tint.height = H; tint.color = S.baseColor;
-    const tc = tint.getContext("2d"); tc.drawImage(sil, 0, 0); tc.globalCompositeOperation = "source-in";
+  if (!tint || tint.color !== S.baseColor || tint.key !== silBuilt.key) {
+    tint = tint && tint.width === W && tint.height === H ? tint : document.createElement("canvas");
+    tint.width = W; tint.height = H; tint.color = S.baseColor; tint.key = silBuilt.key;
+    const tc = tint.getContext("2d"); tc.drawImage(silBuilt, 0, 0); tc.globalCompositeOperation = "source-in";
     tc.fillStyle = S.baseColor; tc.fillRect(0, 0, W, H);
   }
   ctx.save(); ctx.shadowColor = "rgba(0,0,0,.6)"; ctx.shadowBlur = 30 * dpr; ctx.drawImage(tint, 0, 0); ctx.restore();
+  // image + textes, découpés à la forme des coques
+  tmp2D = tmp2D || document.createElement("canvas");
+  const tmp = tmp2D; tmp.width = W; tmp.height = H;
+  const tx = tmp.getContext("2d"); tx.drawImage(tint, 0, 0); tx.globalCompositeOperation = "source-atop"; tx.imageSmoothingEnabled = false;
   if (S.img && qcv) {
-    tmp2D = tmp2D || document.createElement("canvas");
-    const tmp = tmp2D; tmp.width = W; tmp.height = H;
-    const tx = tmp.getContext("2d"); tx.drawImage(tint, 0, 0);
-    tx.globalCompositeOperation = "source-atop";
-    tx.translate(view.ox + S.rect.cx * view.s, view.oy - S.rect.cy * view.s); tx.rotate(-S.rect.rot);
-    tx.imageSmoothingEnabled = false;
-    tx.drawImage(qcv, -S.rect.w * view.s / 2, -S.rect.h * view.s / 2, S.rect.w * view.s, S.rect.h * view.s);
-    ctx.drawImage(tmp, 0, 0);
-    ctx.save(); ctx.translate(view.ox + S.rect.cx * view.s, view.oy - S.rect.cy * view.s); ctx.rotate(-S.rect.rot);
-    ctx.setLineDash([6 * dpr, 5 * dpr]); ctx.strokeStyle = "#6ea0ff"; ctx.lineWidth = 1.2 * dpr;
-    ctx.strokeRect(-S.rect.w * view.s / 2, -S.rect.h * view.s / 2, S.rect.w * view.s, S.rect.h * view.s); ctx.restore();
+    tx.save(); tx.translate(sx(S.rect.cx), sy(S.rect.cy)); tx.rotate(-S.rect.rot);
+    tx.drawImage(qcv, -S.rect.w * view.s / 2, -S.rect.h * view.s / 2, S.rect.w * view.s, S.rect.h * view.s); tx.restore();
   }
-  $("ov2d").textContent = "Vue de dessus · coque " + bw.toFixed(0) + " × " + bh.toFixed(0) + " mm" +
-    (S.img ? " · image " + Math.round(S.rect.w) + " × " + Math.round(S.rect.h) + " mm — glisse pour déplacer, molette pour zoomer" : " · ajoute une image");
+  tx.imageSmoothingEnabled = true;
+  for (const t of S.texts) {
+    if (!t._m) continue;
+    if (!t._tint || t._tint.color !== t.color || t._tint.src !== t._m.cv) {
+      const c = document.createElement("canvas"); c.width = t._m.W; c.height = t._m.H; c.color = t.color; c.src = t._m.cv;
+      const g = c.getContext("2d"); g.drawImage(t._m.cv, 0, 0); g.globalCompositeOperation = "source-in"; g.fillStyle = t.color; g.fillRect(0, 0, c.width, c.height);
+      t._tint = c;
+    }
+    tx.save(); tx.translate(sx(t.cx), sy(t.cy)); tx.rotate(-t.rot);
+    tx.drawImage(t._tint, -t._m.wmm * view.s / 2, -t._m.hmm * view.s / 2, t._m.wmm * view.s, t._m.hmm * view.s); tx.restore();
+  }
+  ctx.drawImage(tmp, 0, 0);
+  // cadre de l'élément sélectionné
+  const outline = (cx, cy, w, h, rot, col) => {
+    ctx.save(); ctx.translate(sx(cx), sy(cy)); ctx.rotate(-rot); ctx.setLineDash([6 * dpr, 5 * dpr]); ctx.strokeStyle = col; ctx.lineWidth = 1.2 * dpr;
+    ctx.strokeRect(-w * view.s / 2, -h * view.s / 2, w * view.s, h * view.s); ctx.restore();
+  };
+  if (S.img) outline(S.rect.cx, S.rect.cy, S.rect.w, S.rect.h, S.rect.rot, S.sel === "img" ? "#6ea0ff" : "#6ea0ff55");
+  for (const t of S.texts) if (t._m && S.sel === t.id) outline(t.cx, t.cy, t._m.wmm, t._m.hmm, t.rot, "#ffb547");
+  $("ov2d").textContent = (S.pieces.length > 1 ? "Côté complet, console debout" : "Vue de dessus") + " · " + fw.toFixed(0) + " × " + fh.toFixed(0) + " mm" +
+    (S.img ? " · image " + Math.round(S.rect.w) + " × " + Math.round(S.rect.h) + " mm" : " · ajoute une image") + (S.img || S.texts.length ? " — glisse pour déplacer, molette pour zoomer" : "");
+}
+// glisser / molette : texte touché en priorité, sinon l'image
+function hit(e) {
+  const r = c2d.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  const x = ((e.clientX - r.left) * dpr - view.ox) / view.s, y = (view.oy - (e.clientY - r.top) * dpr) / view.s;
+  for (let i = S.texts.length - 1; i >= 0; i--) {
+    const t = S.texts[i]; if (!t._m) continue;
+    const dx = x - t.cx, dy = y - t.cy, cs = Math.cos(t.rot), sn = Math.sin(t.rot);
+    if (Math.abs(cs * dx + sn * dy) <= t._m.wmm / 2 + 2 && Math.abs(-sn * dx + cs * dy) <= t._m.hmm / 2 + 2) return t.id;
+  }
+  return S.img ? "img" : null;
 }
 let dragging = null;
-c2d.addEventListener("pointerdown", e => { if (!S.img) return; dragging = { x: e.clientX, y: e.clientY, cx: S.rect.cx, cy: S.rect.cy }; c2d.setPointerCapture(e.pointerId); c2d.classList.add("drag"); });
+c2d.addEventListener("pointerdown", e => {
+  const h = hit(e); if (!h) return;
+  if (S.sel !== h) { S.sel = h; renderTexts(false); }
+  const t = S.texts.find(t => t.id === h);
+  dragging = { x: e.clientX, y: e.clientY, cx: t ? t.cx : S.rect.cx, cy: t ? t.cy : S.rect.cy, t };
+  c2d.setPointerCapture(e.pointerId); c2d.classList.add("drag"); draw2D();
+});
 c2d.addEventListener("pointermove", e => {
   if (!dragging) return; const dpr = window.devicePixelRatio || 1;
-  Object.assign(S.rect, { cx: dragging.cx + (e.clientX - dragging.x) * dpr / view.s, cy: dragging.cy - (e.clientY - dragging.y) * dpr / view.s });
+  const nx = dragging.cx + (e.clientX - dragging.x) * dpr / view.s, ny = dragging.cy - (e.clientY - dragging.y) * dpr / view.s;
+  Object.assign(dragging.t || S.rect, { cx: nx, cy: ny });
   draw2D();
 });
 c2d.addEventListener("pointerup", () => { if (dragging) { dragging = null; c2d.classList.remove("drag"); invalidateGeom(); } });
-c2d.addEventListener("wheel", e => { if (!S.img) return; e.preventDefault(); setRect({ w: Math.max(5, Math.min(600, S.rect.w * Math.exp(-e.deltaY * 0.0012))) }); }, { passive: false });
-window.addEventListener("resize", () => { draw2D(); resize3D(); });
+let wheelTimer = 0;
+c2d.addEventListener("wheel", e => {
+  const h = hit(e); if (!h) return; e.preventDefault();
+  const f = Math.exp(-e.deltaY * 0.0012), t = S.texts.find(t => t.id === h);
+  if (!t) { setRect({ w: Math.max(5, Math.min(800, S.rect.w * f)) }); return; }
+  t.size = Math.max(4, Math.min(150, t.size * f));
+  clearTimeout(wheelTimer);
+  wheelTimer = setTimeout(async () => { await renderTextMask(t); renderTexts(true); textsChanged(); }, 60);
+}, { passive: false });
+window.addEventListener("resize", () => { draw2D(); resize3D(); resizeCon(); });
 
-// ---------------- Vue 3D ----------------
-const c3d = $("c3d");
-const renderer = new THREE.WebGLRenderer({ canvas: c3d, antialias: true });
-renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
-const scene = new THREE.Scene(); scene.background = new THREE.Color("#0c0e13");
-const camera = new THREE.PerspectiveCamera(35, 1, 1, 5000); camera.up.set(0, 0, 1);
-const controls = new OrbitControls(camera, c3d); controls.enableDamping = true;
-scene.add(new THREE.HemisphereLight(0xffffff, 0x30343f, 1.1));
-const dl1 = new THREE.DirectionalLight(0xffffff, 1.6); dl1.position.set(200, -300, 500); scene.add(dl1);
-const dl2 = new THREE.DirectionalLight(0x9fb4ff, 0.5); dl2.position.set(-300, 200, 200); scene.add(dl2);
-const grid = new THREE.GridHelper(500, 25, 0x2a3040, 0x1a1e28); grid.rotation.x = Math.PI / 2; scene.add(grid);
-let meshObj = null, meshData = null;
-function resize3D() {
-  const r = c3d.getBoundingClientRect(); if (r.width < 2) return;
-  renderer.setSize(r.width, r.height, false); camera.aspect = r.width / r.height; camera.updateProjectionMatrix(); dirty3D = true;
+// =====================================================================================
+// Vue 3D (coques de l'espace de travail)
+// =====================================================================================
+function makeView(canvas, upZ) {
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  const scene = new THREE.Scene(); scene.background = new THREE.Color("#0c0e13");
+  const camera = new THREE.PerspectiveCamera(35, 1, 1, 6000); if (upZ) camera.up.set(0, 0, 1);
+  const controls = new OrbitControls(camera, canvas); controls.enableDamping = true;
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x30343f, 1.1));
+  const l1 = new THREE.DirectionalLight(0xffffff, 1.6); l1.position.set(200, upZ ? -300 : 500, upZ ? 500 : 300); scene.add(l1);
+  const l2 = new THREE.DirectionalLight(0x9fb4ff, 0.5); l2.position.set(-300, 200, 200); scene.add(l2);
+  const v = { renderer, scene, camera, controls, dirty: true, canvas };
+  controls.addEventListener("change", () => { v.dirty = true; });
+  return v;
 }
-function setMesh(mesh, ext) {
-  if (meshObj) { scene.remove(meshObj); meshObj.geometry.dispose(); }
-  meshData = { mesh, ext };
-  if (!mesh) { meshObj = null; return; }
-  const { pos, tri } = mesh, nT = tri.length / 3;
-  const P = new Float32Array(nT * 9);
+function resizeView(v) {
+  const r = v.canvas.getBoundingClientRect(); if (r.width < 2) return;
+  v.renderer.setSize(r.width, r.height, false); v.camera.aspect = r.width / r.height; v.camera.updateProjectionMatrix(); v.dirty = true;
+}
+function meshObject(mesh, ext, cols) {
+  const { pos, tri } = mesh, nT = tri.length / 3, P = new Float32Array(nT * 9);
   for (let t = 0; t < nT; t++) for (let k = 0; k < 3; k++) { const v = tri[t * 3 + k] * 3; P[t * 9 + k * 3] = pos[v]; P[t * 9 + k * 3 + 1] = pos[v + 1]; P[t * 9 + k * 3 + 2] = pos[v + 2]; }
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.BufferAttribute(P, 3));
   g.setAttribute("color", new THREE.BufferAttribute(new Float32Array(nT * 9), 3));
   g.computeVertexNormals();
-  meshObj = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55, metalness: 0.05 }));
-  scene.add(meshObj); recolor3D(); mark3D();
+  const o = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55, metalness: 0.05 }));
+  o.userData.ext = ext; colorObject(o, cols);
+  return o;
 }
-let pending3D = 0;
+function colorObject(o, cols) {
+  const tc = cols.map(c => c ? new THREE.Color(c) : null), ext = o.userData.ext, col = o.geometry.attributes.color.array, nT = col.length / 9;
+  for (let t = 0; t < nT; t++) { const c = tc[ext ? ext[t] : 1] || tc[1]; for (let k = 0; k < 3; k++) { col[t * 9 + k * 3] = c.r; col[t * 9 + k * 3 + 1] = c.g; col[t * 9 + k * 3 + 2] = c.b; } }
+  o.geometry.attributes.color.needsUpdate = true;
+}
+const V3 = makeView($("c3d"), true);
+const grid = new THREE.GridHelper(600, 30, 0x2a3040, 0x1a1e28); grid.rotation.x = Math.PI / 2; V3.scene.add(grid);
+let group3D = null;
+function resize3D() { resizeView(V3); }
+function show3DPieces() {
+  if (group3D) { V3.scene.remove(group3D); group3D.traverse(o => o.geometry && o.geometry.dispose()); }
+  group3D = new THREE.Group();
+  const gen = S.gen && S.genKey === geomKey() ? S.gen : null, fm = filaments();
+  S.pieces.forEach((p, i) => {
+    const g = gen && gen.pieces[i];
+    const o = meshObject(g ? g.mesh : p.base, g ? g.ext : null, fm.cols);
+    o.rotation.z = p.k * Math.PI / 2; o.position.set(p.t[0], p.t[1], 0);
+    group3D.add(o);
+  });
+  V3.scene.add(group3D);
+  const [x, y] = S.frame, d = Math.max(x, y) * 1.3;
+  V3.camera.position.set(0, -d * 0.7, d * 0.9); V3.controls.target.set(0, 0, 0); V3.controls.update(); V3.dirty = true;
+}
 function recolor3D() {
-  if (pending3D) return;
-  pending3D = requestAnimationFrame(() => { pending3D = 0; recolor3DNow(); });
+  const fm = filaments();
+  if (group3D) { group3D.children.forEach(o => colorObject(o, fm.cols)); V3.dirty = true; }
+  if (S.gen) S.gen.pieces.forEach(g => { if (S.results[g.piece.id]) S.results[g.piece.id].cols = fm.cols; });
+  conDirty = true;
 }
-function recolor3DNow() {
-  if (!meshObj) return;
-  const cols = extColors().map(c => c ? new THREE.Color(c) : null);
-  const ext = meshData.ext, col = meshObj.geometry.attributes.color.array, nT = col.length / 9;
-  for (let t = 0; t < nT; t++) { const c = cols[ext ? ext[t] : 1] || cols[1]; for (let k = 0; k < 3; k++) { col[t * 9 + k * 3] = c.r; col[t * 9 + k * 3 + 1] = c.g; col[t * 9 + k * 3 + 2] = c.b; } }
-  meshObj.geometry.attributes.color.needsUpdate = true; mark3D();
+
+// =====================================================================================
+// Aperçu console (schématique)
+// =====================================================================================
+const VC = makeView($("ccon"), false);
+const CORE = 30, CH = 357.5, CD = 217.5;            // demi-épaisseur du corps, hauteur, profondeur (mm)
+VC.scene.add(new THREE.Mesh(new THREE.BoxGeometry(CORE * 2, CH - 4, CD - 4), new THREE.MeshStandardMaterial({ color: 0x15171c, roughness: 0.4, metalness: 0.2 })).translateY(CH / 2));
+const floor = new THREE.Mesh(new THREE.CircleGeometry(420, 64), new THREE.MeshStandardMaterial({ color: 0x111319, roughness: 1 }));
+floor.rotation.x = -Math.PI / 2; VC.scene.add(floor);
+let conGroup = null, conDirty = true;
+function resizeCon() { resizeView(VC); }
+async function buildConsole() {
+  conDirty = false;
+  if (conGroup) { VC.scene.remove(conGroup); conGroup.traverse(o => o.geometry && o.geometry.dispose()); }
+  conGroup = new THREE.Group();
+  for (const [side, L] of Object.entries(SIDE_LAYOUT)) {
+    for (const p of L.parts) {
+      const r = S.results[p.id];
+      const mesh = r ? r.mesh : await base0(p.id), kc = ((p.k - (r ? r.spin : 0)) % 4 + 4) % 4;
+      // coque -> côté (rotation kc + translation) -> monde (face latérale de la console)
+      const src = mesh.pos, pos = new Float64Array(src.length);
+      for (let i = 0; i < src.length; i += 3) {
+        let x = src[i], y = src[i + 1]; const z = src[i + 2];
+        for (let q = 0; q < kc; q++) { const t = x; x = -y; y = t; }
+        x += p.t[0]; y += p.t[1] + CH / 2;
+        if (side === "logo") { pos[i] = CORE + z; pos[i + 1] = y; pos[i + 2] = -x; }
+        else { pos[i] = -CORE - z; pos[i + 1] = y; pos[i + 2] = x; }
+      }
+      conGroup.add(meshObject({ pos, tri: mesh.tri }, r ? r.ext : null, r ? r.cols : ["", "#e9e9ec"]));
+    }
+  }
+  VC.scene.add(conGroup); VC.dirty = true;
 }
-function frameCamera() {
-  if (!S.base) return; const [x, y] = S.base.size, d = Math.max(x, y) * 1.35;
-  camera.position.set(0, -d * 0.75, d * 0.9); controls.target.set(0, 0, 0); controls.update();
-}
-function show3DBase() { setMesh(S.base, null); frameCamera(); }
-// rendu à la demande : uniquement quand la vue 3D est affichée et que quelque chose a changé
-let dirty3D = true;
-const mark3D = () => { dirty3D = true; };
-controls.addEventListener("change", mark3D);
+VC.camera.position.set(520, 330, 380); VC.controls.target.set(0, CH / 2, 0); VC.controls.update();
+
 (function loop() {
   requestAnimationFrame(loop);
-  if (!$("v3d").classList.contains("on")) return;
-  const moved = controls.update();
-  if (moved || dirty3D) { dirty3D = false; renderer.render(scene, camera); }
+  for (const [v, id] of [[V3, "v3d"], [VC, "vcon"]]) {
+    if (!$(id).classList.contains("on")) continue;
+    const moved = v.controls.update();
+    if (moved || v.dirty) { v.dirty = false; v.renderer.render(v.scene, v.camera); }
+  }
 })();
 
-document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
+document.querySelectorAll(".tabs button").forEach(b => b.onclick = async () => {
   document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("on", x === b));
   document.querySelectorAll(".view").forEach(v => v.classList.toggle("on", v.id === b.dataset.t));
-  if (b.dataset.t === "v2d") draw2D(); else resize3D();
+  if (b.dataset.t === "v2d") draw2D();
+  else if (b.dataset.t === "v3d") resize3D();
+  else { resizeCon(); if (conDirty) await buildConsole(); }
 });
 
-// ---------------- Génération ----------------
-function geomKey() { const r = S.rect; return [S.labVer || 0, S.base && S.base.tri.length, S.base && S.base.size.join(), r.cx.toFixed(2), r.cy.toFixed(2), r.w.toFixed(2), r.rot.toFixed(4), $("res").value].join("|"); }
+// =====================================================================================
+// Génération
+// =====================================================================================
+function geomKey() {
+  const r = S.rect;
+  return [S.labVer, S.src, S.pieces.map(p => p.id + ":" + p.spin).join(","), S.img ? 1 : 0, r.cx.toFixed(2), r.cy.toFixed(2), r.w.toFixed(2), r.rot.toFixed(4), $("res").value,
+    S.texts.map(t => [t.text, t.font, t.size.toFixed(2), t.cx.toFixed(2), t.cy.toFixed(2), t.rot.toFixed(3)].join("~")).join("§")].join("|");
+}
 function invalidateGeom() {
-  if (S.refined && S.refinedKey !== geomKey()) { $("stale").style.display = "block"; $("dl").disabled = true; }
-  else if (S.refined) { $("stale").style.display = "none"; $("dl").disabled = false; }
+  const fresh = S.gen && S.genKey === geomKey();
+  $("stale").style.display = S.gen && !fresh ? "block" : "none";
+  $("dl").disabled = !fresh;
   updateUI();
 }
 $("res").onchange = invalidateGeom;
 function repaintIfPossible() {
-  if (S.refined && S.refinedKey === geomKey() && S.labels) {
-    S.ext = paintMesh(S.refined, S.rect, S.labels, S.img.w, S.img.h, slotExt());
-    if (meshData && meshData.mesh === S.refined) { meshData.ext = S.ext; recolor3D(); }
+  if (S.gen && S.genKey === geomKey()) {
+    const fm = filaments();
+    S.gen.pieces.forEach((g, i) => { g.ext = paintMeshFn(g.mesh, makeSampler(g.piece, fm)); if (group3D && group3D.children[i]) group3D.children[i].userData.ext = g.ext; storeResult(g, fm); });
+    recolor3D();
   } else invalidateGeom();
 }
 function updateUI() {
-  $("gen").disabled = !(S.base && S.img && S.labels) || S.busy;
-  $("stats").textContent = S.refined ? (S.refined.tri.length / 3).toLocaleString("fr-FR") + " triangles · " + (extColors().length - 1) + " filaments" : "";
+  $("gen").disabled = !(S.pieces.length && ((S.img && S.labels) || S.texts.length)) || S.busy;
+  const fm = filaments();
+  $("stats").textContent = S.gen && S.genKey === geomKey() ? S.gen.pieces.reduce((a, g) => a + g.mesh.tri.length / 3, 0).toLocaleString("fr-FR") + " triangles · " + (fm.cols.length - 1) + " filaments" : "";
+  $("dl").textContent = S.pieces.length > 1 ? "Télécharger les 2 coques (.zip)" : "Télécharger le .3mf";
 }
-// Image intégrale des frontières de couleurs : un triangle n'est redécoupé que s'il touche une
-// frontière (ou le bord de l'image). Les grandes zones unies restent en gros triangles.
-function makeNeedSplit() {
-  const w = S.img.w, h = S.img.h, lab = S.labels, W1 = w + 1;
-  const ii = new Uint32Array(W1 * (h + 1));
+// frontières de couleurs de l'image (image intégrale) : on ne redécoupe que là où la couleur change
+function imageBoundaryTest() {
+  if (!S.img || !S.labels) return null;
+  const w = S.img.w, h = S.img.h, lab = S.labels, W1 = w + 1, ii = new Uint32Array(W1 * (h + 1));
   for (let y = 0; y < h; y++) {
     let row = 0;
     for (let x = 0; x < w; x++) {
       const i = y * w + x, l = lab[i];
-      const b = (x + 1 < w && lab[i + 1] !== l) || (y + 1 < h && lab[i + w] !== l) || (x > 0 && lab[i - 1] !== l) || (y > 0 && lab[i - w] !== l);
-      row += b ? 1 : 0;
+      row += ((x + 1 < w && lab[i + 1] !== l) || (y + 1 < h && lab[i + w] !== l) || (x > 0 && lab[i - 1] !== l) || (y > 0 && lab[i - w] !== l)) ? 1 : 0;
       ii[(y + 1) * W1 + x + 1] = ii[y * W1 + x + 1] + row;
     }
   }
   const r = S.rect, cs = Math.cos(r.rot), sn = Math.sin(r.rot);
   const toPx = (x, y) => { const dx = x - r.cx, dy = y - r.cy; return [((cs * dx + sn * dy) / r.w + 0.5) * w, (0.5 - (-sn * dx + cs * dy) / r.h) * h]; };
-  return (ax, ay, bx, by, cx, cy) => {
-    const A = toPx(ax, ay), B = toPx(bx, by), C = toPx(cx, cy);
-    let x0 = Math.floor(Math.min(A[0], B[0], C[0])) - 1, x1 = Math.ceil(Math.max(A[0], B[0], C[0])) + 1;
-    let y0 = Math.floor(Math.min(A[1], B[1], C[1])) - 1, y1 = Math.ceil(Math.max(A[1], B[1], C[1])) + 1;
-    if (x1 < 0 || y1 < 0 || x0 >= w || y0 >= h) return false;          // hors de l'image
-    if (x0 < 0 || y0 < 0 || x1 > w || y1 > h) return true;              // chevauche le bord de l'image
+  return (A, B, C) => {
+    const a = toPx(A[0], A[1]), b = toPx(B[0], B[1]), c = toPx(C[0], C[1]);
+    const x0 = Math.floor(Math.min(a[0], b[0], c[0])) - 1, x1 = Math.ceil(Math.max(a[0], b[0], c[0])) + 1;
+    const y0 = Math.floor(Math.min(a[1], b[1], c[1])) - 1, y1 = Math.ceil(Math.max(a[1], b[1], c[1])) + 1;
+    if (x1 < 0 || y1 < 0 || x0 >= w || y0 >= h) return false;
+    if (x0 < 0 || y0 < 0 || x1 > w || y1 > h) return true;
     return ii[y1 * W1 + x1] - ii[y0 * W1 + x1] - ii[y1 * W1 + x0] + ii[y0 * W1 + x0] > 0;
   };
 }
+function makeNeedSplit(piece, imgTest, L) {
+  const boxes = S.texts.filter(t => t._m).map(t => { const b = textBox(t); return [b[0] - L, b[1] - L, b[2] + L, b[3] + L]; });
+  return (ax, ay, bx, by, cx, cy) => {
+    const A = toFrame(piece, ax, ay), B = toFrame(piece, bx, by), C = toFrame(piece, cx, cy);
+    const x0 = Math.min(A[0], B[0], C[0]), x1 = Math.max(A[0], B[0], C[0]), y0 = Math.min(A[1], B[1], C[1]), y1 = Math.max(A[1], B[1], C[1]);
+    for (const b of boxes) if (x1 >= b[0] && x0 <= b[2] && y1 >= b[1] && y0 <= b[3]) return true;
+    return imgTest ? imgTest(A, B, C) : false;
+  };
+}
+function makeSampler(piece, fm) {
+  const r = S.rect, cs = Math.cos(r.rot), sn = Math.sin(r.rot), img = S.img && S.labels;
+  return (x, y) => {
+    const [qx, qy] = toFrame(piece, x, y);
+    for (let i = S.texts.length - 1; i >= 0; i--) if (inText(S.texts[i], qx, qy)) return fm.textExt[i];
+    if (!img) return 0;
+    const dx = qx - r.cx, dy = qy - r.cy, u = (cs * dx + sn * dy) / r.w + 0.5, v = 0.5 - (-sn * dx + cs * dy) / r.h;
+    if (u < 0 || u >= 1 || v < 0 || v >= 1) return 0;
+    const l = S.labels[Math.floor(v * S.img.h) * S.img.w + Math.floor(u * S.img.w)];
+    return l >= 0 ? fm.slotExt[l] : 0;
+  };
+}
+function storeResult(g, fm) {
+  if (!PART_NAMES[g.piece.id]) return;
+  S.results[g.piece.id] = { mesh: g.mesh, ext: g.ext, cols: fm.cols, spin: g.piece.spin };
+  conDirty = true;
+}
+const HUGE = { cx: 0, cy: 0, w: 1e7, h: 1e7, rot: 0 };
 $("gen").onclick = async () => {
   if (S.busy) return; S.busy = true; updateUI();
   const prog = $("prog"), bar = prog.firstElementChild; prog.style.display = "block"; bar.style.width = "3%";
-  $("genMsg").className = "msg"; $("genMsg").textContent = "Découpe du maillage sous l'image…"; $("dl").disabled = true;
-  await new Promise(r => setTimeout(r, 30));
+  $("genMsg").className = "msg"; $("genMsg").textContent = "Préparation…"; $("dl").disabled = true;
+  await tick();
   try {
-    const L = +$("res").value;
-    const est = Math.ceil(Math.log2(Math.max(S.rect.w, S.rect.h, 50) / L)) + 2;
-    const needSplit = makeNeedSplit();
-    const mesh = await refineMesh(S.base, S.rect, L, async (pass, n) => {
-      bar.style.width = Math.min(90, 5 + 85 * (pass + 1) / est) + "%";
-      $("genMsg").textContent = "Découpe du maillage… " + Math.round(n / 1000).toLocaleString("fr-FR") + " k triangles";
-      await new Promise(r => setTimeout(r, 0));
-    }, 4e6, needSplit);
-    S.refined = mesh; S.refinedKey = geomKey();
-    S.ext = paintMesh(mesh, S.rect, S.labels, S.img.w, S.img.h, slotExt());
+    for (const t of S.texts) if (!t._m) await renderTextMask(t);
+    const L = +$("res").value, imgTest = imageBoundaryTest(), fm = filaments(), out = [], n = S.pieces.length;
+    for (let i = 0; i < n; i++) {
+      const p = S.pieces[i];
+      const mesh = await refineMesh(p.base, HUGE, L, async (pass, nt) => {
+        bar.style.width = Math.min(95, 5 + 90 * (i + Math.min(1, (pass + 1) / 12)) / n) + "%";
+        $("genMsg").textContent = (n > 1 ? "Coque " + (i + 1) + "/" + n + " · " : "") + "découpe… " + Math.round(nt / 1000).toLocaleString("fr-FR") + " k triangles";
+        await tick();
+      }, 4e6, makeNeedSplit(p, imgTest, L));
+      const g = { piece: p, mesh, ext: paintMeshFn(mesh, makeSampler(p, fm)) };
+      out.push(g); storeResult(g, fm);
+    }
+    S.gen = { pieces: out }; S.genKey = geomKey();
     bar.style.width = "100%";
-    setMesh(mesh, S.ext);
+    show3DPieces();
     document.querySelector('.tabs button[data-t="v3d"]').click();
     $("stale").style.display = "none";
-    $("genMsg").className = "msg ok"; $("genMsg").textContent = "Prêt ! " + (mesh.tri.length / 3).toLocaleString("fr-FR") + " triangles.";
-    $("dl").disabled = false;
+    $("genMsg").className = "msg ok";
+    $("genMsg").textContent = "Prêt ! " + out.reduce((a, g) => a + g.mesh.tri.length / 3, 0).toLocaleString("fr-FR") + " triangles" + (n > 1 ? " sur " + n + " coques." : ".");
   } catch (e) { $("genMsg").className = "msg err"; $("genMsg").textContent = e.message; }
-  S.busy = false; updateUI(); setTimeout(() => { prog.style.display = "none"; }, 600);
+  S.busy = false; invalidateGeom(); setTimeout(() => { prog.style.display = "none"; }, 600);
 };
 
-// ---------------- Export ----------------
+// =====================================================================================
+// Export
+// =====================================================================================
 let downloadsNS;
 async function getDownloads() {
   if (downloadsNS !== undefined) return downloadsNS;
-  try { downloadsNS = (window.claude && window.claude.use) ? await window.claude.use("downloads") : null; } catch { downloadsNS = null; }
+  try { downloadsNS = (window.claude && window.claude.use) ? await window.claude.use("downloads") : null; } catch (e) { downloadsNS = null; }
   return downloadsNS;
 }
+function save(filename, bytes, mime) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([bytes], { type: mime })); a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+}
 $("dl").onclick = async () => {
-  if (!S.refined || !S.ext) return;
+  if (!S.gen || S.genKey !== geomKey()) return;
   $("dlMsg").className = "msg"; $("dlMsg").textContent = "Création du fichier…";
-  await new Promise(r => setTimeout(r, 30));
+  await tick();
   try {
-    const cols = extColors();
-    const FN = { "petite-logo": "haut-cote-logo", "grande": "bas-cote-logo", "petite": "haut-autre-cote", "grande-fente": "bas-autre-cote" };
-    const fname = "ps5-slim-" + (FN[S.src] || (S.src === "stl" ? "coque-perso" : "plaque-test"));
-    const files = build3MFFiles(S.refined, S.ext, cols, { mode: $("mode").value, title: "PS5 Slim — " + (BUILTIN[S.src] || "coque personnalisée") });
-    const z = {};
-    for (const k in files) { const v = files[k]; z[k] = strToU8(Array.isArray(v) ? v.join("") : v); }
-    const threeMF = zipSync(z, { level: 6 });
-    const counts = []; for (const e of S.ext) counts[e] = (counts[e] || 0) + 1;
+    const fm = filaments(), mode = $("mode").value, files = {}, sizes = [];
+    let counts = [];
+    for (const g of S.gen.pieces) {
+      const name = "ps5-slim-" + (FILE_NAMES[g.piece.id] || (g.piece.id === "stl" ? "coque-perso" : "plaque-test"));
+      const parts = build3MFFiles(g.mesh, g.ext, fm.cols, { mode, title: "PS5 Slim — " + g.piece.name });
+      const z = {}; for (const k in parts) { const v = parts[k]; z[k] = strToU8(Array.isArray(v) ? v.join("") : v); }
+      files[name + ".3mf"] = zipSync(z, { level: 6 });
+      for (const e of g.ext) counts[e] = (counts[e] || 0) + 1;
+      sizes.push(g.piece.base.size);
+    }
+    const names = Object.keys(files), side = S.pieces.length > 1;
+    const zipName = side ? "ps5-slim-" + (S.src === "side:logo" ? "cote-logo" : "autre-cote") : names[0].replace(".3mf", "");
     const dn = await getDownloads();
-    if (dn) {
-      // l'hébergeur n'accepte pas l'extension .3mf : on l'emballe dans un .zip
-      const pack = zipSync({ [fname + ".3mf"]: [threeMF, { level: 0 }], "LISEZMOI.txt": strToU8(readmeText(cols, counts, S.base.size, $("mode").value)) });
-      await dn.save({ filename: fname + ".zip", data: new Blob([pack]) });
-      $("dlMsg").className = "msg ok"; $("dlMsg").textContent = "Téléchargé : dézippe pour récupérer " + fname + ".3mf.";
+    if (dn || side) {
+      const pack = { "LISEZMOI.txt": strToU8(readmeText(fm.cols, counts, sizes[0], mode) + (side ? "\r\nCe dossier contient les deux coques du côté : " + names.join(" et ") + ".\r\nImprime-les séparément (une par plateau).\r\n" : "")) };
+      for (const n of names) pack[n] = [files[n], { level: 0 }];
+      const zip = zipSync(pack);
+      if (dn) await dn.save({ filename: zipName + ".zip", data: new Blob([zip]) }); else save(zipName + ".zip", zip, "application/zip");
+      $("dlMsg").className = "msg ok"; $("dlMsg").textContent = "Téléchargé : " + zipName + ".zip (" + names.join(", ") + ").";
     } else {
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(new Blob([threeMF], { type: "model/3mf" })); a.download = fname + ".3mf";
-      document.body.appendChild(a); a.click(); a.remove();
-      $("dlMsg").className = "msg ok"; $("dlMsg").textContent = fname + ".3mf téléchargé (" + (threeMF.length / 1048576).toFixed(1) + " Mo).";
+      save(names[0], files[names[0]], "model/3mf");
+      $("dlMsg").className = "msg ok"; $("dlMsg").textContent = names[0] + " téléchargé (" + (files[names[0]].length / 1048576).toFixed(1) + " Mo).";
     }
   } catch (e) {
     $("dlMsg").className = "msg err";
@@ -1069,8 +1432,12 @@ $("dl").onclick = async () => {
   }
 };
 
-// ---------------- Démarrage ----------------
-rebuildBase(); resize3D(); frameCamera(); syncPlaceUI();
+// =====================================================================================
+// Démarrage
+// =====================================================================================
+$("spinRow").classList.add("hidden");
+renderSlots(); rebuildWorkspace(); resize3D(); syncPlaceUI();
+
 </script>
 </body>
 </html>
