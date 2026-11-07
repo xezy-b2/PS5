@@ -155,6 +155,13 @@
   #c2d.drag{cursor:grabbing}
   .overlay{position:absolute;left:16px;bottom:16px;max-width:calc(100% - 32px);background:var(--pill);border:1px solid var(--pill-line);border-radius:8px;padding:7px 11px;font-size:12px;color:var(--stage-ink);backdrop-filter:blur(8px)}
   .badge{position:absolute;right:16px;top:16px;background:#F4C46B;color:#3a2700;font-weight:650;font-size:12px;border-radius:8px;padding:6px 11px;display:none}
+  .conswitch{position:absolute;left:16px;top:16px;display:flex;gap:2px;background:var(--pill);border:1px solid var(--pill-line);border-radius:9px;padding:3px;backdrop-filter:blur(8px);z-index:2}
+  .conswitch button{border:0;background:none;padding:6px 12px;border-radius:7px;color:var(--stage-ink);cursor:pointer;font-weight:600;font-size:12.5px}
+  .conswitch button.on{background:var(--panel);color:var(--ink)}
+  .sfwrap{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--stage)}
+  .sfwrap iframe{flex:1;width:100%;border:0}
+  .sfcredit{margin:0;padding:8px 16px;font-size:12px;color:var(--stage-ink)}
+  .sfcredit a{color:inherit;font-weight:600}
   .empty{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;color:#8C93A0;font-size:14px;text-align:center}
 
   @media (max-width:900px){
@@ -317,6 +324,14 @@
   </div>
   <div class="view" id="vcon">
     <canvas id="ccon"></canvas>
+    <div class="sfwrap hidden" id="sfwrap">
+      <iframe id="sfFrame" title="PS5 Slim" frameborder="0" allowfullscreen allow="autoplay; fullscreen; xr-spatial-tracking"></iframe>
+      <p class="sfcredit"><a href="https://sketchfab.com/3d-models/ps5-slim-a48efc06663541a1bc19297995fea91d" target="_blank" rel="nofollow">PS5 Slim</a> par <a href="https://sketchfab.com/rtql8d" target="_blank" rel="nofollow">rtql8d</a> sur <a href="https://sketchfab.com" target="_blank" rel="nofollow">Sketchfab</a></p>
+    </div>
+    <div class="conswitch" role="tablist" aria-label="Modèle affiché">
+      <button class="on" data-c="mine">Avec mes coques</button>
+      <button data-c="sf">Modèle 3D Sketchfab</button>
+    </div>
     <div class="overlay" id="ovcon">Corps de console reconstitué, tes coques sont les vraies. Les coques générées apparaissent avec leurs couleurs.</div>
   </div>
 </main>
@@ -1504,6 +1519,13 @@ function setNav(open) {
   try { localStorage.setItem("atelier-nav", open ? "1" : "0"); } catch (e) { }
   setTimeout(() => { draw2D(); resize3D(); resizeCon(); }, 220);
 }
+document.querySelectorAll(".conswitch button").forEach(btn => btn.onclick = () => {
+  document.querySelectorAll(".conswitch button").forEach(x => x.classList.toggle("on", x === btn));
+  const sf = btn.dataset.c === "sf";
+  $("sfwrap").classList.toggle("hidden", !sf); $("ovcon").classList.toggle("hidden", sf);
+  if (sf && !$("sfFrame").src) $("sfFrame").src = "https://sketchfab.com/models/a48efc06663541a1bc19297995fea91d/embed?ui_theme=dark&autostart=1";
+  if (!sf) { resizeCon(); VC.dirty = true; }
+});
 $("navBtn").onclick = () => setNav(document.querySelector(".app").classList.contains("nav-closed"));
 $("themeBtn").onclick = () => applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
 
