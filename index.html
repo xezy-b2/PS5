@@ -828,7 +828,10 @@ function afterWorkspace() {
 
 document.querySelectorAll("#parts button").forEach(b => b.onclick = () => {
   document.querySelectorAll("#parts button").forEach(x => x.classList.toggle("on", x === b));
-  S.src = b.dataset.v; S.spin = 0;
+  S.src = b.dataset.v;
+  // une coque seule s'affiche à l'endroit, comme sur la console debout
+  S.spin = 0;
+  for (const L of Object.values(SIDE_LAYOUT)) for (const p of L.parts) if (p.id === S.src) S.spin = p.k;
   $("demoBox").classList.toggle("hidden", S.src !== "demo");
   $("stlBox").classList.toggle("hidden", S.src !== "stl");
   $("spinRow").classList.toggle("hidden", S.src.startsWith("side:"));
