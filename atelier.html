@@ -1612,6 +1612,77 @@ function applyConsoleView() {
   $("cmOpts").classList.toggle("hidden", !custom);
   if (defaultCredit === null) defaultCredit = $("ovcon").innerHTML;
   $("ovcon").innerHTML = custom ? "Modèle importé depuis ton ordinateur. Il s'affiche seulement dans ce navigateur et n'est ni envoyé ni enregistré." : defaultCredit;
+  updateCustomDesign();
+  VC.dirty = true;
+}
+// Mode « Tel quel » : le design est projeté sur les faces latérales du modèle importé
+// (côté logo à droite, autre côté à gauche), comme un autocollant vu de profil.
+const designTex = {};
+function sideDesignCanvas(side) {
+  const L = SIDE_LAYOUT[side], [FW, FH] = L.size, K = 3;
+  let off = null;
+  if (S.src === "side:" + side) off = [0, 0];
+  else { const p = L.parts.find(q => q.id === S.src); if (p) off = p.t; }
+  if (!off || (!S.img && !S.texts.length)) return null;
+  const c = document.createElement("canvas"); c.width = Math.round(FW * K); c.height = Math.round(FH * K);
+  const g = c.getContext("2d"), X = x => (x + off[0] + FW / 2) * K, Y = y => (FH / 2 - (y + off[1])) * K;
+  g.imageSmoothingEnabled = false;
+  if (S.img && qcv) { g.save(); g.translate(X(S.rect.cx), Y(S.rect.cy)); g.rotate(-S.rect.rot); g.drawImage(qcv, -S.rect.w * K / 2, -S.rect.h * K / 2, S.rect.w * K, S.rect.h * K); g.restore(); }
+  g.imageSmoothingEnabled = true;
+  for (const t of S.texts) {
+    if (!t._tint) continue;
+    g.save(); g.translate(X(t.cx), Y(t.cy)); g.rotate(-t.rot); g.drawImage(t._tint, -t._m.wmm * K / 2, -t._m.hmm * K / 2, t._m.wmm * K, t._m.hmm * K); g.restore();
+  }
+  return c;
+}
+let customOverlay = null;
+function buildCustomOverlay() {
+  if (customOverlay) { customOverlay.parent && customOverlay.parent.remove(customOverlay); customOverlay.traverse(o => o.geometry && o.geometry.dispose()); }
+  customOverlay = new THREE.Group();
+  consoleRoot.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(consoleRoot.matrixWorld).invert();
+  const sides = { logo: { pos: [], uv: [] }, autre: { pos: [], uv: [] } };
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), n = new THREE.Vector3();
+  customModel.traverse(o => {
+    if (!o.isMesh || !o.visible) return;
+    const m = new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld), pa = o.geometry.attributes.position, ix = o.geometry.index;
+    const cnt = ix ? ix.count : pa.count;
+    for (let i = 0; i < cnt; i += 3) {
+      const i0 = ix ? ix.getX(i) : i, i1 = ix ? ix.getX(i + 1) : i + 1, i2 = ix ? ix.getX(i + 2) : i + 2;
+      a.fromBufferAttribute(pa, i0).applyMatrix4(m); b.fromBufferAttribute(pa, i1).applyMatrix4(m); c.fromBufferAttribute(pa, i2).applyMatrix4(m);
+      n.subVectors(b, a).cross(new THREE.Vector3().subVectors(c, a)).normalize();
+      // le sens des faces varie selon les modèles : on se fie à la position (côté droit / gauche)
+      if (Math.abs(n.x) < 0.45) continue;
+      const cx = (a.x + b.x + c.x) / 3, side = cx > 0 ? "logo" : "autre";
+      n.x = Math.sign(cx);
+      const [FW, FH] = SIDE_LAYOUT[side].size, S2 = sides[side];
+      for (const v of [a, b, c]) {
+        const fx = side === "logo" ? -v.z : v.z, fy = v.y - CH / 2;
+        S2.pos.push(v.x + Math.sign(n.x) * 1.2, v.y, v.z); S2.uv.push(fx / FW + 0.5, fy / FH + 0.5);
+      }
+    }
+  });
+  for (const side of ["logo", "autre"]) {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(sides[side].pos, 3));
+    g.setAttribute("uv", new THREE.Float32BufferAttribute(sides[side].uv, 2)); g.computeVertexNormals();
+    const mat = new THREE.MeshStandardMaterial({ transparent: true, alphaTest: 0.5, roughness: 0.45, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -8, side: THREE.DoubleSide });
+    const mesh = new THREE.Mesh(g, mat); mesh.userData.side = side; customOverlay.add(mesh);
+  }
+  consoleRoot.add(customOverlay);
+}
+function updateCustomDesign() {
+  if (!customModel || $("cmMode").value !== "asis") { if (customOverlay) customOverlay.visible = false; return; }
+  if (!customOverlay || customOverlay.userData.spin !== customSpin || customOverlay.userData.model !== customModel || customOverlay.userData.dirty) {
+    buildCustomOverlay(); customOverlay.userData = { spin: customSpin, model: customModel };
+  }
+  customOverlay.visible = true;
+  for (const mesh of customOverlay.children) {
+    const cv = sideDesignCanvas(mesh.userData.side);
+    if (mesh.material.map) { mesh.material.map.dispose(); mesh.material.map = null; }
+    mesh.visible = !!cv;
+    if (cv) { const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; mesh.material.map = t; mesh.material.needsUpdate = true; }
+  }
   VC.dirty = true;
 }
 $("cmBtn").onclick = () => $("cmIn").click();
@@ -1637,7 +1708,7 @@ let hideMode = false; const ray = new THREE.Raycaster(), ptr = new THREE.Vector2
 $("cmHide").onclick = () => { hideMode = !hideMode; $("cmHide").classList.toggle("on", hideMode);
   $("cmHide").textContent = hideMode ? "Terminer" : "Masquer des pièces";
   if (hideMode) toast("Clique sur une pièce du modèle importé pour la masquer. « Tout réafficher » annule."); };
-$("cmShowAll").onclick = () => { if (customModel) customModel.traverse(o => { if (o.isMesh) o.visible = true; }); VC.dirty = true; };
+$("cmShowAll").onclick = () => { if (customModel) customModel.traverse(o => { if (o.isMesh) o.visible = true; }); if (customOverlay) customOverlay.userData.dirty = true; updateCustomDesign(); VC.dirty = true; };
 let downAt = null;
 $("ccon").addEventListener("pointerdown", e => { downAt = [e.clientX, e.clientY]; });
 $("ccon").addEventListener("pointerup", e => {
@@ -1646,7 +1717,7 @@ $("ccon").addEventListener("pointerup", e => {
   ptr.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
   ray.setFromCamera(ptr, VC.camera);
   const hits = ray.intersectObject(customModel, true).filter(h => h.object.visible);
-  if (hits.length) { hits[0].object.visible = false; VC.dirty = true; }
+  if (hits.length) { hits[0].object.visible = false; if (customOverlay) customOverlay.userData.dirty = true; updateCustomDesign(); VC.dirty = true; }
 });
 $("cmSpin").onclick = () => { customSpin = (customSpin + 1) % 4; applyConsoleView(); };
 $("cmReset").onclick = () => {
@@ -1741,7 +1812,7 @@ document.querySelectorAll(".tabs button").forEach(b => b.onclick = async () => {
   document.querySelectorAll(".view").forEach(v => v.classList.toggle("on", v.id === b.dataset.t));
   if (b.dataset.t === "v2d") draw2D();
   else if (b.dataset.t === "v3d") resize3D();
-  else { resizeCon(); if (conDirty) await buildConsole(); }
+  else { resizeCon(); if (conDirty) await buildConsole(); updateCustomDesign(); }
 });
 
 // =====================================================================================
@@ -1842,7 +1913,7 @@ $("gen").onclick = async () => {
       out.push(g); storeResult(g, fm);
     }
     S.gen = { pieces: out }; S.genKey = geomKey();
-    if (customModel && $("cmMode").value === "asis") { $("cmMode").value = "covers"; applyConsoleView(); toast("Modèle importé : affichage « Avec mes coques » pour voir ton design."); }
+
     bar.style.width = "100%";
     show3DPieces();
     document.querySelector('.tabs button[data-t="v3d"]').click();
