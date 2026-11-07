@@ -1465,7 +1465,7 @@ let glbBody = null;
     root.traverse(o => {
       if (!o.isMesh) return;
       const n = o.material.name;
-      if (n === "Material" || n === "Material.005") { o.visible = false; return; }          // coques d'origine
+      if (n === "Material" || n === "Material.005") { o.visible = false; o.userData.cover = n === "Material.005" ? "top" : "bottom"; return; }   // coques d'origine
       if (n === "Material.001") o.material = new THREE.MeshPhysicalMaterial({ color: 0x0b0c0e, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.15 });
       if (n === "Material.002") o.material = new THREE.MeshBasicMaterial({ color: 0x4f7bff });
     });
@@ -1477,9 +1477,61 @@ let glbBody = null;
     wrap.scale.setScalar(sc); wrap.rotation.y = Math.PI;      // sa face avant (+Z) passe à l'avant de la scène (−Z)
     glbBody = wrap; consoleRoot.add(wrap);
     procParts().forEach(o => { o.visible = false; });
-    VC.dirty = true;
+    alignToGlb(); VC.dirty = true;
   } catch (e) { console.warn("Modèle de console indisponible, corps reconstitué utilisé.", e); }
 })();
+// Cale chaque coque du site sur l'emplacement de la coque d'origine correspondante du modèle :
+// même face extérieure (côté), même bord haut (coques du haut) ou bas (coques du bas).
+function glbCoverStats() {
+  if (glbCoverStats.cache) return glbCoverStats.cache;
+  const st = {}; consoleRoot.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(consoleRoot.matrixWorld).invert(), v = new THREE.Vector3();
+  glbBody.traverse(o => {
+    if (!o.isMesh || !o.userData.cover) return;
+    const pa = o.geometry.attributes.position, m = new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld);
+    for (let i = 0; i < pa.count; i++) {
+      v.fromBufferAttribute(pa, i).applyMatrix4(m);
+      const k = (v.x > 0 ? "logo" : "autre") + (o.userData.cover === "top" ? "T" : "B");
+      const s = st[k] || (st[k] = { x: 0, ymin: Infinity, ymax: -Infinity });
+      s.x = Math.max(s.x, Math.abs(v.x)); s.ymin = Math.min(s.ymin, v.y); s.ymax = Math.max(s.ymax, v.y);
+    }
+  });
+  return (glbCoverStats.cache = st);
+}
+function alignToGlb() {
+  if (!glbBody || !conGroup) return;
+  const st = glbCoverStats();
+  for (const o of conGroup.children) {
+    const { side, top } = o.userData, g = st[side + (top ? "T" : "B")]; if (!g) continue;
+    const pa = o.geometry.attributes.position; let x = 0, ymin = Infinity, ymax = -Infinity;
+    for (let i = 0; i < pa.count; i++) { x = Math.max(x, Math.abs(pa.getX(i))); const y = pa.getY(i); if (y < ymin) ymin = y; if (y > ymax) ymax = y; }
+    o.position.x = (side === "logo" ? 1 : -1) * (g.x - x);
+    o.position.y = top ? g.ymax - ymax : g.ymin - ymin;
+  }
+  // comble noir entre les coques (visible à l'arrière et au-dessus) : il s'arrête juste sous le bord intérieur des coques
+  let inner = Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const o of conGroup.children) {
+    const pa = o.geometry.attributes.position, xs = [];
+    for (let i = 0; i < pa.count; i++) {
+      if (Math.abs(pa.getZ(i)) < CD / 2 - 14) continue;
+      xs.push(Math.abs(pa.getX(i) + o.position.x));
+      y0 = Math.min(y0, pa.getY(i) + o.position.y); y1 = Math.max(y1, pa.getY(i) + o.position.y);
+    }
+    xs.sort((a, b) => a - b); if (xs.length) inner = Math.min(inner, xs[Math.floor(xs.length * 0.4)]);
+  }
+  if (!isFinite(inner)) return;
+  if (filler) { consoleRoot.remove(filler); filler.geometry.dispose(); }
+  const w = 2 * inner - 1, h = y1 - y0 - 4, d = CD - 6;
+  filler = new THREE.Mesh(new RoundedBox(w, h, d, 4), new THREE.MeshPhysicalMaterial({ color: 0x0b0c0e, roughness: 0.45, clearcoat: 0.6 }));
+  filler.position.set(0, y0 + 2 + h / 2, 0); consoleRoot.add(filler);
+}
+let filler = null;
+function RoundedBox(w, h, d, r) {
+  const shp = new THREE.Shape(), x = -w / 2, y = -h / 2; r = Math.min(r, w / 2 - 0.1, h / 2 - 0.1);
+  shp.moveTo(x + r, y); shp.lineTo(x + w - r, y); shp.quadraticCurveTo(x + w, y, x + w, y + r); shp.lineTo(x + w, y + h - r);
+  shp.quadraticCurveTo(x + w, y + h, x + w - r, y + h); shp.lineTo(x + r, y + h); shp.quadraticCurveTo(x, y + h, x, y + h - r); shp.lineTo(x, y + r); shp.quadraticCurveTo(x, y, x + r, y);
+  const g = new THREE.ExtrudeGeometry(shp, { depth: d, bevelEnabled: false, curveSegments: 6 }); g.translate(0, 0, -d / 2); return g;
+}
 const procParts = () => [bodyMesh, detailFront, detailBack, detailTop, ledStrips, driveCaps].filter(Boolean);
 
 // sol et ombre douce
@@ -1513,12 +1565,13 @@ async function buildConsole() {
       }
       samples.push({ pos, zs, side, id: p.id });
       const o = meshObject({ pos, tri: mesh.tri }, r ? r.ext : null, r ? r.cols : ["", "#eef0f3"]);
+      o.userData.side = side; o.userData.top = p === L.parts[0];
       o.material.roughness = 0.42; o.material.envMapIntensity = 1.15;
       conGroup.add(o);
     }
   }
   if (!bodyMesh) rebuildBody(samples);       // la forme des coques ne change pas : le corps est calculé une fois
-  consoleRoot.add(conGroup); VC.dirty = true;
+  consoleRoot.add(conGroup); alignToGlb(); VC.dirty = true;
 }
 VC.camera.position.set(470, 230, -640); VC.controls.target.set(0, CH / 2 - 10, 0); VC.controls.update();
 VC.controls.maxPolarAngle = Math.PI * 0.49; VC.controls.minDistance = 250; VC.controls.maxDistance = 1600;
