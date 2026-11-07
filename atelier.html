@@ -180,11 +180,15 @@
   .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:9px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:70;max-width:calc(100% - 32px)}
   .toast.show{opacity:1;transform:translate(-50%,0)}
   @media (max-width:1180px){.stats{display:none}}
+  @media (max-width:1420px){.stats{display:none}.brand{min-width:0}}
+  @media (max-width:1280px){.brand .model{display:none}#galleryBtn{display:none}}
+  header.top .btn,.tabs button{white-space:nowrap}
   .cmbar{position:absolute;left:16px;top:16px;display:flex;gap:6px;align-items:center;z-index:2}
   .cmbar #cmOpts{display:flex;gap:6px}
   .cmbar #cmOpts.hidden{display:none}
   .cmbar select{width:auto}
   .cmbar .btn{padding:6px 11px;font-size:12.5px}
+  .cmbar .btn.on{background:var(--ink);color:var(--panel);border-color:var(--ink)}
   .empty{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;color:#8C93A0;font-size:14px;text-align:center}
 
   @media (max-width:900px){
@@ -362,6 +366,8 @@
       <span id="cmOpts" class="hidden">
         <select id="cmMode" aria-label="Affichage du modèle importé"><option value="asis" selected>Tel quel</option><option value="covers">Avec mes coques</option></select>
         <button class="btn" id="cmSpin" title="Tourner le modèle de 90°">↻ 90°</button>
+        <button class="btn" id="cmHide">Masquer des pièces</button>
+        <button class="btn" id="cmShowAll">Tout réafficher</button>
         <button class="btn" id="cmReset">Modèle par défaut</button>
       </span>
       <input type="file" id="cmIn" accept=".glb,model/gltf-binary" class="hidden">
@@ -1626,6 +1632,22 @@ $("cmIn").onchange = async () => {
   } catch (e) { toast("Impossible de lire ce modèle : " + (e.message || e)); }
 };
 $("cmMode").onchange = applyConsoleView;
+// masquer / réafficher des pièces du modèle importé d'un clic (pour retirer ses coques d'origine)
+let hideMode = false; const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+$("cmHide").onclick = () => { hideMode = !hideMode; $("cmHide").classList.toggle("on", hideMode);
+  $("cmHide").textContent = hideMode ? "Terminer" : "Masquer des pièces";
+  if (hideMode) toast("Clique sur une pièce du modèle importé pour la masquer. « Tout réafficher » annule."); };
+$("cmShowAll").onclick = () => { if (customModel) customModel.traverse(o => { if (o.isMesh) o.visible = true; }); VC.dirty = true; };
+let downAt = null;
+$("ccon").addEventListener("pointerdown", e => { downAt = [e.clientX, e.clientY]; });
+$("ccon").addEventListener("pointerup", e => {
+  if (!hideMode || !customModel || !downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 4) return;
+  const r = $("ccon").getBoundingClientRect();
+  ptr.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ptr, VC.camera);
+  const hits = ray.intersectObject(customModel, true).filter(h => h.object.visible);
+  if (hits.length) { hits[0].object.visible = false; VC.dirty = true; }
+});
 $("cmSpin").onclick = () => { customSpin = (customSpin + 1) % 4; applyConsoleView(); };
 $("cmReset").onclick = () => {
   if (customModel) { consoleRoot.remove(customModel); customModel.traverse(o => o.geometry && o.geometry.dispose()); customModel = null; }
@@ -1820,6 +1842,7 @@ $("gen").onclick = async () => {
       out.push(g); storeResult(g, fm);
     }
     S.gen = { pieces: out }; S.genKey = geomKey();
+    if (customModel && $("cmMode").value === "asis") { $("cmMode").value = "covers"; applyConsoleView(); toast("Modèle importé : affichage « Avec mes coques » pour voir ton design."); }
     bar.style.width = "100%";
     show3DPieces();
     document.querySelector('.tabs button[data-t="v3d"]').click();
