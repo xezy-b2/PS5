@@ -32,9 +32,14 @@
   .hidden{display:none!important}
 
   /* ---------- structure ---------- */
-  .app{display:grid;grid-template-columns:392px 1fr;grid-template-rows:60px 1fr;height:100vh}
+  .app{display:grid;grid-template-columns:392px 1fr;grid-template-rows:60px 1fr;height:100vh;transition:grid-template-columns .2s ease}
+  .app.nav-closed{grid-template-columns:0 1fr}
+  .app.nav-closed aside{visibility:hidden;padding:0;border:0}
+  .app.nav-closed .chev{transform:rotate(180deg);transform-origin:14.5px 12px}
+  .iconbtn2{width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--line2);border-radius:9px;background:var(--panel);color:var(--ink);cursor:pointer;padding:0;flex:none}
+  .iconbtn2:hover{background:var(--hover)}
   header.top{grid-column:1/-1;display:flex;align-items:center;gap:20px;padding:0 18px 0 20px;background:var(--panel);border-bottom:1px solid var(--line);position:relative;z-index:3}
-  .brand{display:flex;align-items:baseline;gap:10px;min-width:356px}
+  .brand{display:flex;align-items:baseline;gap:10px;min-width:300px}
   .brand .word{font-weight:800;font-size:19px;letter-spacing:-.01em;font-variation-settings:"wdth" 125}
   .brand .model{font-size:13px;color:var(--muted);font-weight:500}
   .tabs{display:flex;gap:2px;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:3px}
@@ -49,7 +54,7 @@
   .progress{position:absolute;left:0;right:0;bottom:-1px;height:2px;background:transparent;display:none}
   .progress div{height:100%;width:0;background:var(--accent);transition:width .2s}
 
-  aside{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding:8px 22px 40px}
+  aside{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;overflow-x:hidden;padding:8px 22px 40px}
   main{position:relative;min-width:0;background:var(--stage)}
 
   /* ---------- étapes (vraie séquence) ---------- */
@@ -172,6 +177,9 @@
 <body>
 <div class="app">
 <header class="top">
+  <button class="iconbtn2" id="navBtn" aria-expanded="true" aria-controls="settings" title="Masquer les réglages">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/><path class="chev" d="M15.5 10l-2 2 2 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
   <div class="brand"><span class="word">Atelier Coque</span><span class="model">pour PS5 Slim</span></div>
   <nav class="tabs" aria-label="Vues">
     <button data-t="v2d" class="on">Placement</button>
@@ -191,7 +199,7 @@
   <div class="progress" id="prog"><div></div></div>
 </header>
 
-<aside>
+<aside id="settings">
   <section class="step">
     <span class="n">1</span><h2>Choisis la coque</h2>
     <div class="parts" id="parts">
@@ -1301,16 +1309,71 @@ function canvasTex(wmm, hmm, k, draw) {
 }
 function rr(g, x, y, w, h, r) { g.beginPath(); g.roundRect(x, y, w, h, r); }
 const consoleRoot = new THREE.Group(); consoleRoot.position.y = LIFT; VC.scene.add(consoleRoot);
+const bodyMat = new THREE.MeshPhysicalMaterial({ color: 0x0b0c0e, roughness: 0.32, metalness: 0.0, clearcoat: 1, clearcoatRoughness: 0.18 });
+let bodyMesh = null, detailFront = null, detailBack = null, detailTop = null;
+// Corps moulé sur les coques : à chaque hauteur, sa largeur suit le bord intérieur des coques
+// (relevé sur les bords avant et arrière), ce qui supprime les jours entre corps et coques.
+function rebuildBody(samples) {
+  // tranches horizontales tous les 3 mm : largeur (bords intérieurs des coques gauche / droite)
+  // et profondeur (avant / arrière des coques) relevées à chaque hauteur
+  const STEP = 3, n = Math.ceil(CH / STEP) + 1;
+  const R = new Array(n).fill(NaN), L = new Array(n).fill(NaN), F = new Array(n).fill(NaN), Bk = new Array(n).fill(NaN);
+  for (const { pos, zs, side } of samples) {
+    for (let i = 0; i < zs.length; i++) {
+      const b = Math.round(pos[i * 3 + 1] / STEP); if (b < 0 || b >= n) continue;
+      const zw = pos[i * 3 + 2];
+      F[b] = isNaN(F[b]) ? zw : Math.max(F[b], zw); Bk[b] = isNaN(Bk[b]) ? zw : Math.min(Bk[b], zw);
+      if (zs[i] < 0.4 || Math.abs(zw) < CD / 2 - 16) continue;      // largeur : bord des coques, sans les clips
+      const x = pos[i * 3];
+      if (side === "logo") R[b] = isNaN(R[b]) ? x : Math.min(R[b], x); else L[b] = isNaN(L[b]) ? x : Math.max(L[b], x);
+    }
+  }
+  const fill = (A, def) => {
+    const idx = []; A.forEach((v, i) => { if (!isNaN(v)) idx.push(i); });
+    if (!idx.length) return A.map(() => def);
+    return A.map((v, i) => {
+      if (!isNaN(v)) return v;
+      let lo = -1, hi = -1; for (const j of idx) { if (j < i) lo = j; else { hi = j; break; } }
+      if (lo < 0) return A[hi]; if (hi < 0) return A[lo];
+      return A[lo] + (A[hi] - A[lo]) * (i - lo) / (hi - lo);
+    });
+  };
+  const smooth = (A, k) => A.map((v, i) => { let s = 0, c = 0; for (let d = -k; d <= k; d++) if (A[i + d] !== undefined) { s += A[i + d]; c++; } return s / c; });
+  const Rf = smooth(fill(R, CORE), 2), Lf = smooth(fill(L, -CORE), 2), Ff = smooth(fill(F, CD / 2), 2), Bf = smooth(fill(Bk, -CD / 2), 2);
+  // anneaux (rectangle à coins arrondis) empilés, avec un arrondi en haut et en bas
+  const SEG = 5, RAD = 6, ring = [];
+  const y0 = 3, y1 = CH - 2, ys = [];
+  for (let y = y0; y <= y1; y += STEP) ys.push(y);
+  const at = (A, y) => A[Math.max(0, Math.min(n - 1, Math.round(y / STEP)))];
+  const verts = [], idx = [];
+  const rings = ys.map((y, j) => {
+    const e = Math.min(j, ys.length - 1 - j), sh = e < 3 ? (3 - e) * 1.6 : 0;   // arrondi des extrémités
+    const xr = at(Rf, y) - 4 - sh, xl = at(Lf, y) + 4 + sh, zf = at(Ff, y) - 1.2 - sh, zb = at(Bf, y) + 1.2 + sh;
+    const r = Math.max(1, Math.min(RAD, (xr - xl) / 2 - 1, (zf - zb) / 2 - 1));
+    const start = verts.length / 3;
+    const corners = [[xr - r, zf - r, 0], [xl + r, zf - r, Math.PI / 2], [xl + r, zb + r, Math.PI], [xr - r, zb + r, 1.5 * Math.PI]];
+    for (const [cx, cz, a0] of corners) for (let k = 0; k <= SEG; k++) { const a = a0 + (k / SEG) * Math.PI / 2; verts.push(cx + r * Math.cos(a), y, cz + r * Math.sin(a)); }
+    return start;
+  });
+  const m = 4 * (SEG + 1);
+  for (let j = 0; j < rings.length - 1; j++) for (let k = 0; k < m; k++) {
+    const a = rings[j] + k, b = rings[j] + (k + 1) % m, c = rings[j + 1] + k, d = rings[j + 1] + (k + 1) % m;
+    idx.push(a, c, b, b, c, d);
+  }
+  for (const [rj, up] of [[rings[0], false], [rings[rings.length - 1], true]]) {      // bouchons
+    let cx = 0, cy = 0, cz = 0; for (let k = 0; k < m; k++) { cx += verts[(rj + k) * 3]; cy += verts[(rj + k) * 3 + 1]; cz += verts[(rj + k) * 3 + 2]; }
+    const c = verts.length / 3; verts.push(cx / m, cy / m, cz / m);
+    for (let k = 0; k < m; k++) { const a = rj + k, b = rj + (k + 1) % m; if (up) idx.push(c, b, a); else idx.push(c, a, b); }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(verts, 3)); geo.setIndex(idx); geo.computeVertexNormals();
+  if (bodyMesh) { consoleRoot.remove(bodyMesh); bodyMesh.geometry.dispose(); }
+  bodyMesh = new THREE.Mesh(geo, bodyMat); consoleRoot.add(bodyMesh);
+  // détails avant / arrière / dessus calés sur le corps obtenu
+  const mid = ys.filter(y => y > 40 && y < CH - 40), zfm = Math.min(...mid.map(y => at(Ff, y))) - 1.2, zbm = Math.max(...mid.map(y => at(Bf, y))) + 1.2;
+  detailFront.position.z = zfm + 0.3; detailBack.position.z = zbm - 0.3; detailTop.position.y = y1 + 0.3;
+}
 (function buildBody() {
-  // corps noir brillant : profil arrondi extrudé sur l'épaisseur
-  const shp = new THREE.Shape(), w = CD - 6, h = CH - 6, r = 12, x0 = -w / 2, y0 = 3;
-  shp.moveTo(x0 + r, y0); shp.lineTo(x0 + w - r, y0); shp.quadraticCurveTo(x0 + w, y0, x0 + w, y0 + r);
-  shp.lineTo(x0 + w, y0 + h - r); shp.quadraticCurveTo(x0 + w, y0 + h, x0 + w - r, y0 + h);
-  shp.lineTo(x0 + r, y0 + h); shp.quadraticCurveTo(x0, y0 + h, x0, y0 + h - r); shp.lineTo(x0, y0 + r); shp.quadraticCurveTo(x0, y0, x0 + r, y0);
-  const geo = new THREE.ExtrudeGeometry(shp, { depth: CORE * 2 - 6, bevelEnabled: true, bevelThickness: 3, bevelSize: 3, bevelSegments: 4, curveSegments: 10 });
-  geo.rotateY(Math.PI / 2); geo.translate(-(CORE - 3), 0, 0);
-  const black = new THREE.MeshPhysicalMaterial({ color: 0x0b0c0e, roughness: 0.32, metalness: 0.0, clearcoat: 1, clearcoatRoughness: 0.18 });
-  consoleRoot.add(new THREE.Mesh(geo, black));
   const W = CORE * 2 - 8;
   const panel = (tex, wmm, hmm) => new THREE.Mesh(new THREE.PlaneGeometry(wmm, hmm),
     new THREE.MeshPhysicalMaterial({ map: tex, roughness: 0.38, clearcoat: 0.8, clearcoatRoughness: 0.25, transparent: true }));
@@ -1325,7 +1388,7 @@ const consoleRoot = new THREE.Group(); consoleRoot.position.y = LIFT; VC.scene.a
     const grd = g.createLinearGradient(w / 2 - 9, 0, w / 2 + 9, 0); grd.addColorStop(0, "rgba(120,170,255,0)"); grd.addColorStop(.5, "rgba(170,205,255,.95)"); grd.addColorStop(1, "rgba(120,170,255,0)");
     g.fillStyle = grd; g.fillRect(w / 2 - 9, 8, 18, 0.9);
   }), W, CH - 30);
-  front.position.set(0, CH / 2 + 6, CD / 2 + 0.35); consoleRoot.add(front);
+  front.position.set(0, CH / 2 + 6, CD / 2 + 0.35); consoleRoot.add(front); detailFront = front;
   // arrière : aérations + connectique
   const back = panel(canvasTex(W, CH - 30, 6, (g, w, h) => {
     g.clearRect(0, 0, w, h);
@@ -1339,13 +1402,13 @@ const consoleRoot = new THREE.Group(); consoleRoot.position.y = LIFT; VC.scene.a
     slot(w / 2, by + 33, 15, 12, 1);          // Ethernet
     slot(w / 2, by + 48, 9, 5, 2.5);          // alimentation
   }), W, CH - 30);
-  back.position.set(0, CH / 2 + 6, -CD / 2 - 0.35); back.rotation.y = Math.PI; consoleRoot.add(back);
+  back.position.set(0, CH / 2 + 6, -CD / 2 - 0.35); back.rotation.y = Math.PI; consoleRoot.add(back); detailBack = back;
   // dessus et dessous : fentes d'aération
   const vents = () => canvasTex(W, CD - 40, 6, (g, w, h) => {
     g.clearRect(0, 0, w, h); g.fillStyle = "#050506";
     for (let y = 6; y < h - 6; y += 3.4) { rr(g, 5, y, w - 10, 1.5, 0.75); g.fill(); }
   });
-  const top = panel(vents(), W, CD - 40); top.rotation.x = -Math.PI / 2; top.position.set(0, CH + 0.35, 0); consoleRoot.add(top);
+  const top = panel(vents(), W, CD - 40); top.rotation.x = -Math.PI / 2; top.position.set(0, CH - 1.6, 0); consoleRoot.add(top); detailTop = top;
   // socle rond
   const stand = new THREE.Mesh(new THREE.CylinderGeometry(58, 62, LIFT, 64), new THREE.MeshPhysicalMaterial({ color: 0x15161a, roughness: 0.45, clearcoat: 0.6 }));
   stand.position.set(0, LIFT / 2, 0); VC.scene.add(stand);
@@ -1360,29 +1423,32 @@ function resizeCon() { resizeView(VC); }
 async function buildConsole() {
   conDirty = false;
   if (conGroup) { consoleRoot.remove(conGroup); conGroup.traverse(o => o.geometry && o.geometry.dispose()); }
-  conGroup = new THREE.Group();
+  conGroup = new THREE.Group(); const samples = [];
   for (const [side, L] of Object.entries(SIDE_LAYOUT)) {
     for (const p of L.parts) {
       const r = S.results[p.id];
       const mesh = r ? r.mesh : await base0(p.id), kc = ((p.k - (r ? r.spin : 0)) % 4 + 4) % 4;
       // coque -> côté (rotation kc + translation) -> monde (face latérale de la console)
-      const src = mesh.pos, pos = new Float64Array(src.length), sp = r ? r.spin : 0;
+      const src = mesh.pos, pos = new Float64Array(src.length), zs = new Float32Array(src.length / 3), sp = r ? r.spin : 0;
       const [fa, fb, fc] = PART_FIT[p.id] || [0, 0, 0];
       for (let i = 0; i < src.length; i += 3) {
         let x = src[i], y = src[i + 1];
         // repère d'origine de la coque (sans la rotation choisie dans le site)
         let x0 = x, y0 = y; for (let q = 0; q < (4 - sp) % 4; q++) { const t = x0; x0 = -y0; y0 = t; }
         const z = src[i + 2] - (fa * x0 + fb * y0 + fc);      // le bord de la coque se pose sur le corps
+        zs[i / 3] = z;
         for (let q = 0; q < kc; q++) { const t = x; x = -y; y = t; }
         x += p.t[0]; y += p.t[1] + CH / 2;
         if (side === "logo") { pos[i] = CORE + z; pos[i + 1] = y; pos[i + 2] = -x; }
         else { pos[i] = -CORE - z; pos[i + 1] = y; pos[i + 2] = x; }
       }
+      samples.push({ pos, zs, side });
       const o = meshObject({ pos, tri: mesh.tri }, r ? r.ext : null, r ? r.cols : ["", "#eef0f3"]);
       o.material.roughness = 0.62; o.material.envMapIntensity = 0.6;
       conGroup.add(o);
     }
   }
+  if (!bodyMesh) rebuildBody(samples);       // la forme des coques ne change pas : le corps est calculé une fois
   consoleRoot.add(conGroup); VC.dirty = true;
 }
 VC.camera.position.set(560, 360, 420); VC.controls.target.set(0, CH / 2, 0); VC.controls.update();
@@ -1402,6 +1468,14 @@ function applyTheme(t) {
   grid.material.color = new THREE.Color(cssVar("--stage-line"));
   V3.dirty = VC.dirty = true; silBuilt = null; draw2D();
 }
+function setNav(open) {
+  document.querySelector(".app").classList.toggle("nav-closed", !open);
+  $("navBtn").setAttribute("aria-expanded", open ? "true" : "false");
+  $("navBtn").title = open ? "Masquer les réglages" : "Afficher les réglages";
+  try { localStorage.setItem("atelier-nav", open ? "1" : "0"); } catch (e) { }
+  setTimeout(() => { draw2D(); resize3D(); resizeCon(); }, 220);
+}
+$("navBtn").onclick = () => setNav(document.querySelector(".app").classList.contains("nav-closed"));
 $("themeBtn").onclick = () => applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
 
 (function loop() {
@@ -1582,6 +1656,7 @@ $("dl").onclick = async () => {
 let theme0 = "light";
 try { theme0 = localStorage.getItem("atelier-theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"); } catch (e) { }
 applyTheme(theme0);
+try { if (localStorage.getItem("atelier-nav") === "0") setNav(false); } catch (e) { }
 $("spinRow").classList.add("hidden");
 renderSlots(); rebuildWorkspace(); resize3D(); syncPlaceUI();
 
