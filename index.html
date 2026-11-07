@@ -1300,7 +1300,7 @@ const CORE = 33, CH = 357.5, CD = 217.5, LIFT = 8;   // demi-épaisseur du corps
 VC.renderer.outputColorSpace = THREE.SRGBColorSpace;
 // reflets réalistes : environnement de studio
 VC.scene.environment = new THREE.PMREMGenerator(VC.renderer).fromScene(new RoomEnvironment(), 0.04).texture;
-VC.scene.children.filter(o => o.isLight).forEach(o => { o.intensity *= 0.55; });
+VC.scene.children.filter(o => o.isLight).forEach(o => { o.intensity *= 0.85; });
 
 function canvasTex(wmm, hmm, k, draw) {
   const c = document.createElement("canvas"); c.width = Math.round(wmm * k); c.height = Math.round(hmm * k);
@@ -1310,15 +1310,15 @@ function canvasTex(wmm, hmm, k, draw) {
 function rr(g, x, y, w, h, r) { g.beginPath(); g.roundRect(x, y, w, h, r); }
 const consoleRoot = new THREE.Group(); consoleRoot.position.y = LIFT; VC.scene.add(consoleRoot);
 const bodyMat = new THREE.MeshPhysicalMaterial({ color: 0x0b0c0e, roughness: 0.32, metalness: 0.0, clearcoat: 1, clearcoatRoughness: 0.18 });
-let bodyMesh = null, detailFront = null, detailBack = null, detailTop = null;
+let bodyMesh = null, detailFront = null, detailBack = null, detailTop = null, ledStrips = null, driveCaps = null;
 // Corps moulé sur les coques : à chaque hauteur, sa largeur suit le bord intérieur des coques
 // (relevé sur les bords avant et arrière), ce qui supprime les jours entre corps et coques.
 function rebuildBody(samples) {
   // tranches horizontales tous les 3 mm : largeur (bords intérieurs des coques gauche / droite)
   // et profondeur (avant / arrière des coques) relevées à chaque hauteur
   const STEP = 3, n = Math.ceil(CH / STEP) + 1;
-  const R = new Array(n).fill(NaN), L = new Array(n).fill(NaN), F = new Array(n).fill(NaN), Bk = new Array(n).fill(NaN);
-  for (const { pos, zs, side } of samples) {
+  const R = new Array(n).fill(NaN), L = new Array(n).fill(NaN), F = new Array(n).fill(NaN), Bk = new Array(n).fill(NaN), DRV = new Array(n).fill(NaN);
+  for (const { pos, zs, side, id } of samples) {
     for (let i = 0; i < zs.length; i++) {
       const b = Math.round(pos[i * 3 + 1] / STEP); if (b < 0 || b >= n) continue;
       const zw = pos[i * 3 + 2];
@@ -1326,6 +1326,7 @@ function rebuildBody(samples) {
       if (zs[i] < 0.4 || Math.abs(zw) < CD / 2 - 16) continue;      // largeur : bord des coques, sans les clips
       const x = pos[i * 3];
       if (side === "logo") R[b] = isNaN(R[b]) ? x : Math.min(R[b], x); else L[b] = isNaN(L[b]) ? x : Math.max(L[b], x);
+      if (id === "grande-fente") DRV[b] = isNaN(DRV[b]) ? x : Math.min(DRV[b], x);      // paroi extérieure du renflement du lecteur
     }
   }
   const fill = (A, def) => {
@@ -1339,6 +1340,7 @@ function rebuildBody(samples) {
     });
   };
   const smooth = (A, k) => A.map((v, i) => { let s = 0, c = 0; for (let d = -k; d <= k; d++) if (A[i + d] !== undefined) { s += A[i + d]; c++; } return s / c; });
+  // le lecteur de disque remplit le renflement de sa coque : là où elle bombe nettement, le corps suit sa paroi
   const Rf = smooth(fill(R, CORE), 2), Lf = smooth(fill(L, -CORE), 2), Ff = smooth(fill(F, CD / 2), 2), Bf = smooth(fill(Bk, -CD / 2), 2);
   // anneaux (rectangle à coins arrondis) empilés, avec un arrondi en haut et en bas
   const SEG = 5, RAD = 6, ring = [];
@@ -1371,7 +1373,34 @@ function rebuildBody(samples) {
   bodyMesh = new THREE.Mesh(geo, bodyMat); consoleRoot.add(bodyMesh);
   // détails avant / arrière / dessus calés sur le corps obtenu
   const mid = ys.filter(y => y > 40 && y < CH - 40), zfm = Math.min(...mid.map(y => at(Ff, y))) - 1.2, zbm = Math.max(...mid.map(y => at(Bf, y))) + 1.2;
-  detailFront.position.z = zfm + 0.3; detailBack.position.z = zbm - 0.3; detailTop.position.y = y1 + 0.3;
+  detailFront.position.z = zbm - 0.3; detailBack.position.z = zfm + 0.3; detailTop.position.y = y1 + 0.3;
+  // liserés lumineux bleus de chaque côté de la face avant
+  if (ledStrips) { consoleRoot.remove(ledStrips); ledStrips.traverse(o => o.geometry && o.geometry.dispose()); }
+  ledStrips = new THREE.Group();
+  const ledMat = new THREE.MeshBasicMaterial({ color: 0x4f7bff, transparent: true, opacity: 0.95 });
+  const glowMat = new THREE.MeshBasicMaterial({ color: 0x3a64ff, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false });
+  for (const sgn of [1, -1]) {
+    const pts = mid.filter((_, i) => i % 2 === 0).map(y => new THREE.Vector3(sgn > 0 ? at(Rf, y) - 4.6 : at(Lf, y) + 4.6, y, zbm - 0.7));
+    const curve = new THREE.CatmullRomCurve3(pts);
+    ledStrips.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 120, 0.7, 6), ledMat));
+    ledStrips.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 120, 2.6, 8), glowMat));
+  }
+  consoleRoot.add(ledStrips);
+  // façade du lecteur de disque : on ferme l'ouverture avant / arrière du renflement de sa coque
+  if (driveCaps) { consoleRoot.remove(driveCaps); driveCaps.traverse(o => o.geometry && o.geometry.dispose()); }
+  driveCaps = new THREE.Group();
+  const bulge = []; for (let b = 0; b < n; b++) if (!isNaN(DRV[b]) && DRV[b] + 6 < Lf[b] - 8) bulge.push(b);
+  if (bulge.length > 4) {
+    const shp = new THREE.Shape(), b0 = bulge[0], b1 = bulge[bulge.length - 1];
+    const outer = b => (isNaN(DRV[b]) ? Lf[b] : Math.min(DRV[b] + 2.2, Lf[b])) ;
+    shp.moveTo(Lf[b0] - 4, b0 * STEP);
+    for (let b = b0; b <= b1; b++) shp.lineTo(outer(b), b * STEP);
+    for (let b = b1; b >= b0; b--) shp.lineTo(Lf[b] - 4, b * STEP);
+    shp.closePath();
+    const capMat = new THREE.MeshPhysicalMaterial({ color: 0x0b0c0e, roughness: 0.4, clearcoat: 0.8, side: THREE.DoubleSide });
+    for (const z of [zbm - 0.4, zfm + 0.4]) { const m = new THREE.Mesh(new THREE.ShapeGeometry(shp, 2), capMat); m.position.z = z; driveCaps.add(m); }
+  }
+  consoleRoot.add(driveCaps);
 }
 (function buildBody() {
   const W = CORE * 2 - 8;
@@ -1388,7 +1417,7 @@ function rebuildBody(samples) {
     const grd = g.createLinearGradient(w / 2 - 9, 0, w / 2 + 9, 0); grd.addColorStop(0, "rgba(120,170,255,0)"); grd.addColorStop(.5, "rgba(170,205,255,.95)"); grd.addColorStop(1, "rgba(120,170,255,0)");
     g.fillStyle = grd; g.fillRect(w / 2 - 9, 8, 18, 0.9);
   }), W, CH - 30);
-  front.position.set(0, CH / 2 + 6, CD / 2 + 0.35); consoleRoot.add(front); detailFront = front;
+  front.position.set(0, CH / 2 + 6, -CD / 2 - 0.35); front.rotation.y = Math.PI; consoleRoot.add(front); detailFront = front;   // avant : côté où la séparation des coques est la plus haute
   // arrière : aérations + connectique
   const back = panel(canvasTex(W, CH - 30, 6, (g, w, h) => {
     g.clearRect(0, 0, w, h);
@@ -1402,7 +1431,7 @@ function rebuildBody(samples) {
     slot(w / 2, by + 33, 15, 12, 1);          // Ethernet
     slot(w / 2, by + 48, 9, 5, 2.5);          // alimentation
   }), W, CH - 30);
-  back.position.set(0, CH / 2 + 6, -CD / 2 - 0.35); back.rotation.y = Math.PI; consoleRoot.add(back); detailBack = back;
+  back.position.set(0, CH / 2 + 6, CD / 2 + 0.35); consoleRoot.add(back); detailBack = back;
   // dessus et dessous : fentes d'aération
   const vents = () => canvasTex(W, CD - 40, 6, (g, w, h) => {
     g.clearRect(0, 0, w, h); g.fillStyle = "#050506";
@@ -1442,16 +1471,16 @@ async function buildConsole() {
         if (side === "logo") { pos[i] = CORE + z; pos[i + 1] = y; pos[i + 2] = -x; }
         else { pos[i] = -CORE - z; pos[i + 1] = y; pos[i + 2] = x; }
       }
-      samples.push({ pos, zs, side });
+      samples.push({ pos, zs, side, id: p.id });
       const o = meshObject({ pos, tri: mesh.tri }, r ? r.ext : null, r ? r.cols : ["", "#eef0f3"]);
-      o.material.roughness = 0.62; o.material.envMapIntensity = 0.6;
+      o.material.roughness = 0.42; o.material.envMapIntensity = 1.15;
       conGroup.add(o);
     }
   }
   if (!bodyMesh) rebuildBody(samples);       // la forme des coques ne change pas : le corps est calculé une fois
   consoleRoot.add(conGroup); VC.dirty = true;
 }
-VC.camera.position.set(560, 360, 420); VC.controls.target.set(0, CH / 2, 0); VC.controls.update();
+VC.camera.position.set(470, 230, -640); VC.controls.target.set(0, CH / 2 - 10, 0); VC.controls.update();
 VC.controls.maxPolarAngle = Math.PI * 0.49; VC.controls.minDistance = 250; VC.controls.maxDistance = 1600;
 
 // =====================================================================================
