@@ -163,6 +163,23 @@
   .sfcredit{margin:0;padding:8px 16px;font-size:12px;color:var(--stage-ink)}
   .sfcredit a{color:inherit;font-weight:600}
   .overlay a{color:inherit;font-weight:600}
+  .tools{display:flex;align-items:center;gap:6px}
+  .tools .sep{width:1px;height:22px;background:var(--line2);margin:0 4px}
+  .iconbtn2:disabled{opacity:.35;cursor:not-allowed}
+  .resume{position:absolute;left:50%;top:16px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:var(--panel);color:var(--ink);border:1px solid var(--line2);border-radius:10px;padding:8px 8px 8px 14px;box-shadow:0 10px 30px #0003;font-size:13px;z-index:3;max-width:calc(100% - 32px)}
+  .resume .btn{padding:6px 11px}
+  .modal{position:fixed;inset:0;background:#0007;display:grid;place-items:center;z-index:60;padding:20px}
+  .sheet{background:var(--panel);color:var(--ink);border-radius:14px;padding:20px 22px;width:min(760px,100%);max-height:90vh;overflow:auto;box-shadow:0 30px 80px #0006}
+  .sheethead{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .sheethead h3{margin:0;font-size:18px;font-variation-settings:"wdth" 115}
+  .exgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
+  .excard{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:8px;cursor:pointer}
+  .excard:hover{border-color:var(--ink)}
+  .excard b{font-size:13px} .excard small{font-size:11.5px;color:var(--muted);line-height:1.35}
+  .exthumb{width:100%;height:auto;border-radius:6px;margin-bottom:6px;display:block}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:9px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:70;max-width:calc(100% - 32px)}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  @media (max-width:1180px){.stats{display:none}}
   .empty{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;color:#8C93A0;font-size:14px;text-align:center}
 
   @media (max-width:900px){
@@ -196,6 +213,15 @@
   </nav>
   <div class="spacer"></div>
   <div class="stats" id="stats"></div>
+  <div class="tools">
+    <button class="iconbtn2" id="undoBtn" title="Annuler (Cmd+Z)" aria-label="Annuler" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+    <button class="iconbtn2" id="redoBtn" title="Rétablir (Cmd+Maj+Z)" aria-label="Rétablir" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
+    <span class="sep"></span>
+    <button class="iconbtn2" id="openBtn" title="Ouvrir un projet" aria-label="Ouvrir un projet"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
+    <button class="iconbtn2" id="saveBtn" title="Enregistrer le projet (Cmd+S)" aria-label="Enregistrer le projet"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 4h11l3 3v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg></button>
+    <button class="btn" id="galleryBtn">Exemples</button>
+    <input type="file" id="projIn" accept=".json,application/json" class="hidden">
+  </div>
   <button class="theme" id="themeBtn" aria-label="Changer de thème">
     <svg class="sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
     <svg class="moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.8 6.8 0 0 0 10.7 10.7z"/></svg>
@@ -316,6 +342,7 @@
 <main>
   <div class="view on" id="v2d">
     <canvas id="c2d"></canvas>
+    <div class="resume hidden" id="resume" role="status"><span id="resumeTxt"></span><button class="btn primary" id="resumeYes">Reprendre</button><button class="btn" id="resumeNo">Ignorer</button></div>
     <div class="overlay" id="ov2d">Ajoute une image pour commencer</div>
   </div>
   <div class="view" id="v3d">
@@ -330,6 +357,14 @@
 </main>
 </div>
 <div class="pop hidden" id="pop"></div>
+<div class="modal hidden" id="gallery" role="dialog" aria-modal="true" aria-labelledby="galleryTitle">
+  <div class="sheet">
+    <div class="sheethead"><h3 id="galleryTitle">Exemples</h3><button class="iconbtn2" id="galleryClose" aria-label="Fermer">✕</button></div>
+    <p class="hint" style="margin:0 0 14px">Des visuels prêts à l'emploi pour un côté entier de la console. Choisis-en un, puis modifie couleurs et textes à ta guise.</p>
+    <div class="exgrid" id="galleryGrid"></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 // ================= CORE (géométrie, image, 3MF) =================
@@ -821,22 +856,25 @@ async function rebuildWorkspace() {
   afterWorkspace();
 }
 function afterWorkspace() {
-  if (S.img && S.pieces.length) fitImage(); else syncPlaceUI();
+  if (S.img && S.pieces.length && !S.keepRect) fitImage(); else syncPlaceUI();
+  S.keepRect = false;
   silBuilt = null;
   invalidateGeom(); draw2D(); show3DPieces(); updateUI();
 }
 
-document.querySelectorAll("#parts button").forEach(b => b.onclick = () => {
-  document.querySelectorAll("#parts button").forEach(x => x.classList.toggle("on", x === b));
-  S.src = b.dataset.v;
+function selectSource(src, spin) {
+  S.src = src;
+  document.querySelectorAll("#parts button").forEach(x => x.classList.toggle("on", x.dataset.v === src));
   // une coque seule s'affiche à l'endroit, comme sur la console debout
   S.spin = 0;
   for (const L of Object.values(SIDE_LAYOUT)) for (const p of L.parts) if (p.id === S.src) S.spin = p.k;
+  if (spin !== undefined) S.spin = spin;
   $("demoBox").classList.toggle("hidden", S.src !== "demo");
   $("stlBox").classList.toggle("hidden", S.src !== "stl");
   $("spinRow").classList.toggle("hidden", S.src.startsWith("side:"));
-  rebuildWorkspace();
-});
+  return rebuildWorkspace();
+}
+document.querySelectorAll("#parts button").forEach(b => b.onclick = () => selectSource(b.dataset.v));
 ["dL", "dW", "dT", "dR", "dC"].forEach(id => $(id).addEventListener("change", rebuildWorkspace));
 $("face").onchange = () => { S.face = $("face").value; rebuildWorkspace(); };
 $("spin").onclick = () => { S.spin = (S.spin + 1) % 4; rebuildWorkspace(); };
@@ -866,16 +904,26 @@ wireDrop($("imgDrop"), $("imgIn"), file => {
     const MAX = 1000, sc = Math.min(1, MAX / Math.max(im.width, im.height));
     const w = Math.max(1, Math.round(im.width * sc)), h = Math.max(1, Math.round(im.height * sc));
     const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
-    const cx = cv.getContext("2d"); cx.drawImage(im, 0, 0, w, h);
-    S.img = { w, h, rgba: cx.getImageData(0, 0, w, h).data };
-    $("imgDrop").innerHTML = '<img src="' + url + '" alt="">' + file.name + ", " + im.width + " × " + im.height + " px";
-    S.rect.rot = 0; S.sel = "img";
-    quantize(); fitImage(); invalidateGeom(); draw2D(); updateUI();
+    cv.getContext("2d").drawImage(im, 0, 0, w, h);
+    setImage(cv, file.name + ", " + im.width + " × " + im.height + " px");
   };
   im.onerror = () => { $("imgDropTxt").textContent = "Image illisible, essaie un PNG ou JPG."; };
   im.src = url;
 });
 
+let imgSeq = 0;
+function setImage(cv, label, opts) {
+  opts = opts || {};
+  S.img = { w: cv.width, h: cv.height, rgba: cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data, id: ++imgSeq, label, png: cv.toDataURL("image/png") };
+  showImgThumb();
+  S.rect.rot = 0; S.sel = "img";
+  if (!opts.noQuantize) { quantize(); fitImage(); }
+  invalidateGeom(); draw2D(); updateUI();
+}
+function showImgThumb() {
+  if (!S.img) { $("imgDrop").innerHTML = '<span id="imgDropTxt">Dépose une image PNG ou JPG, ou clique pour la choisir</span>'; return; }
+  $("imgDrop").innerHTML = '<img src="' + S.img.png + '" alt="">' + (S.img.label || "");
+}
 function quantize() {
   if (!S.img) return;
   const k = +$("k").value, prev = S.slots;
@@ -914,14 +962,14 @@ function renderSlots() {
   renderFils();
 }
 function colorsChanged() {      // couleurs seulement : pas de nouvelle découpe nécessaire
-  renderSlots(); renderTexts(false); buildQuantCanvas(); draw2D(); repaintIfPossible(); updateUI();
+  renderSlots(); renderTexts(false); buildQuantCanvas(); draw2D(); repaintIfPossible(); updateUI(); markChange();
 }
 function removeSlot(idx) {
   if (S.slots.length <= 1 || !S.labels) return;
   const keep = S.centers.map((c, i) => i).filter(i => i !== idx);
   const remap = new Int16Array(S.centers.length).fill(-1);
   keep.forEach((old, n) => { remap[old] = n; });
-  const rgba = S.img.rgba, lab = S.labels;
+  const rgba = S.img.rgba, lab = S.labels.slice();
   for (let p = 0; p < lab.length; p++) {
     const l = lab[p]; if (l < 0) continue;
     if (l !== idx) { lab[p] = remap[l]; continue; }
@@ -933,7 +981,7 @@ function removeSlot(idx) {
     }
     lab[p] = best;
   }
-  S.labVer++;
+  S.labels = lab; S.labVer++;
   S.centers = keep.map(i => S.centers[i]); S.slots = keep.map(i => S.slots[i]);
   $("k").value = S.centers.length; $("kVal").textContent = S.centers.length;
   renderSlots(); buildQuantCanvas(); draw2D(); invalidateGeom(); updateUI();
@@ -1632,9 +1680,10 @@ function invalidateGeom() {
   const fresh = S.gen && S.genKey === geomKey();
   $("stale").style.display = S.gen && !fresh ? "block" : "none";
   $("dl").disabled = !fresh;
-  updateUI();
+  updateUI(); markChange();
 }
 $("res").onchange = invalidateGeom;
+$("mode").onchange = () => markChange();
 function repaintIfPossible() {
   if (S.gen && S.genKey === geomKey()) {
     const fm = filaments();
@@ -1776,6 +1825,240 @@ $("dl").onclick = async () => {
 };
 
 // =====================================================================================
+// Historique (annuler / rétablir)
+// =====================================================================================
+const H = { undo: [], redo: [], last: null, restoring: false, timer: 0 };
+function lightState() {
+  return {
+    src: S.src, spin: S.spin, face: S.face,
+    demo: ["dL", "dW", "dT", "dR", "dC"].map(id => +$(id).value),
+    rect: { ...S.rect }, baseColor: S.baseColor,
+    slots: S.slots.map(x => ({ color: x.color, merge: x.merge })),
+    texts: S.texts.map(t => ({ id: t.id, text: t.text, font: t.font, size: t.size, color: t.color, cx: t.cx, cy: t.cy, rot: t.rot })),
+    k: +$("k").value, smooth: $("smooth").checked, res: $("res").value, mode: $("mode").value,
+  };
+}
+function snapshot() {
+  const light = lightState();
+  return { light, img: S.img, centers: S.centers, labels: S.labels, labVer: S.labVer,
+    key: JSON.stringify(light) + "|" + S.labVer + "|" + (S.img ? S.img.id : 0) };
+}
+function markChange() {
+  if (H.restoring) return;
+  clearTimeout(H.timer);
+  H.timer = setTimeout(() => {
+    const snap = snapshot();
+    if (H.last && H.last.key === snap.key) return;
+    if (H.last) { H.undo.push(H.last); if (H.undo.length > 50) H.undo.shift(); }
+    H.last = snap; H.redo = [];
+    updateHistoryUI(); scheduleAutosave();
+  }, 350);
+}
+async function restore(snap) {
+  H.restoring = true;
+  try {
+    const L = snap.light;
+    ["dL", "dW", "dT", "dR", "dC"].forEach((id, i) => { $(id).value = L.demo[i]; });
+    S.face = L.face; $("face").value = L.face;
+    if (L.src !== S.src || L.spin !== S.spin) { S.keepRect = true; await selectSource(L.src, L.spin); }
+    S.img = snap.img; S.centers = snap.centers; S.labels = snap.labels; S.labVer = snap.labVer;
+    S.slots = L.slots.map(x => ({ ...x })); S.baseColor = L.baseColor; tint = null;
+    S.rect = { ...L.rect };
+    S.texts = L.texts.map(t => ({ ...t }));
+    for (const t of S.texts) { await renderTextMask(t); const n = +t.id.slice(1); if (n > textSeq) textSeq = n; }
+    $("k").value = L.k; $("kVal").textContent = L.k; $("smooth").checked = L.smooth; $("res").value = L.res; $("mode").value = L.mode;
+    if (!S.texts.find(t => t.id === S.sel)) S.sel = "img";
+    showImgThumb(); renderSlots(); renderTexts(true); buildQuantCanvas(); syncPlaceUI(); invalidateGeom(); repaintIfPossible(); draw2D(); updateUI();
+  } finally { H.restoring = false; }
+  H.last = snapshot(); updateHistoryUI(); scheduleAutosave();
+}
+async function undo() { if (!H.undo.length || H.restoring) return; H.redo.push(H.last); await restore(H.undo.pop()); }
+async function redo() { if (!H.redo.length || H.restoring) return; H.undo.push(H.last); await restore(H.redo.pop()); }
+function updateHistoryUI() { $("undoBtn").disabled = !H.undo.length; $("redoBtn").disabled = !H.redo.length; }
+$("undoBtn").onclick = undo; $("redoBtn").onclick = redo;
+document.addEventListener("keydown", e => {
+  if (!(e.metaKey || e.ctrlKey)) return;
+  const t = e.target, typing = t && (t.tagName === "INPUT" && t.type === "text" || t.tagName === "TEXTAREA");
+  if (typing) return;
+  const k = e.key.toLowerCase();
+  if (k === "z" && !e.shiftKey) { e.preventDefault(); undo(); }
+  else if ((k === "z" && e.shiftKey) || k === "y") { e.preventDefault(); redo(); }
+  else if (k === "s") { e.preventDefault(); saveProject(); }
+});
+
+// =====================================================================================
+// Projet : enregistrer / ouvrir un fichier, et reprise automatique du dernier projet
+// =====================================================================================
+const b64 = u8 => { let s = ""; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
+const unb64 = str => { const bin = atob(str), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; };
+function projectData() {
+  const light = lightState();
+  return {
+    app: "atelier-coque-ps5-slim", version: 1, saved: new Date().toISOString(), state: light,
+    image: S.img ? { label: S.img.label || "", png: S.img.png, centers: S.centers,
+      labels: S.labels ? b64(new Uint8Array(S.labels.buffer, S.labels.byteOffset, S.labels.byteLength)) : null } : null,
+    note: S.src === "stl" ? "Le fichier STL n'est pas inclus : réimporte-le après ouverture." : undefined,
+  };
+}
+function imageFromPng(png) {
+  return new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error("Image du projet illisible.")); im.src = png; });
+}
+async function loadProject(data) {
+  if (!data || data.app !== "atelier-coque-ps5-slim") throw new Error("Ce fichier n'est pas un projet Atelier Coque.");
+  let img = null, centers = [], labels = null, labVer = S.labVer + 1;
+  if (data.image) {
+    const im = await imageFromPng(data.image.png), cv = document.createElement("canvas");
+    cv.width = im.width; cv.height = im.height; const g = cv.getContext("2d"); g.drawImage(im, 0, 0);
+    img = { w: cv.width, h: cv.height, rgba: g.getImageData(0, 0, cv.width, cv.height).data, id: ++imgSeq, label: data.image.label, png: data.image.png };
+    centers = data.image.centers || [];
+    if (data.image.labels) { const u = unb64(data.image.labels); labels = new Int16Array(u.buffer, 0, u.byteLength / 2); }
+  }
+  if (H.last) { H.undo.push(H.last); H.redo = []; }
+  await restore({ light: data.state, img, centers, labels, labVer });
+  if (data.state.src === "stl" && !S.rawSTL) toast("Projet ouvert. Réimporte ton fichier STL, il n'est pas enregistré dans le projet.");
+  else toast("Projet ouvert.");
+}
+async function saveProject() {
+  const json = JSON.stringify(projectData()), name = "projet-coque-ps5-slim.json";
+  try {
+    const dn = await getDownloads();
+    if (dn) await dn.save({ filename: name, data: json }); else save(name, json, "application/json");
+    toast("Projet enregistré : " + name);
+  } catch (e) { if (!(e && e.code === "declined")) toast("Échec de l'enregistrement : " + (e.message || e.code || e)); }
+}
+$("saveBtn").onclick = saveProject;
+$("openBtn").onclick = () => $("projIn").click();
+$("projIn").onchange = async () => {
+  const f = $("projIn").files[0]; $("projIn").value = ""; if (!f) return;
+  try { await loadProject(JSON.parse(await f.text())); } catch (e) { toast(e.message || "Fichier de projet illisible."); }
+};
+// sauvegarde automatique dans le navigateur (IndexedDB)
+function idb() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open("atelier-coque", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("kv");
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  });
+}
+async function idbSet(k, v) { const db = await idb(); return new Promise((res, rej) => { const t = db.transaction("kv", "readwrite"); t.objectStore("kv").put(v, k); t.oncomplete = res; t.onerror = () => rej(t.error); }); }
+async function idbGet(k) { const db = await idb(); return new Promise((res, rej) => { const r = db.transaction("kv").objectStore("kv").get(k); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+let autosaveTimer = 0, autosaveReady = false;
+function scheduleAutosave() {
+  if (!autosaveReady) return;
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(() => { if (S.img || S.texts.length) idbSet("last", projectData()).catch(() => { }); }, 1200);
+}
+async function offerResume() {
+  let last = null; try { last = await idbGet("last"); } catch (e) { }
+  autosaveReady = true;
+  if (!last || !(last.image || (last.state && last.state.texts && last.state.texts.length))) return;
+  const when = new Date(last.saved);
+  $("resumeTxt").textContent = "Reprendre ton dernier projet (" + when.toLocaleDateString("fr-FR") + " à " + when.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) + ") ?";
+  $("resume").classList.remove("hidden");
+  $("resumeYes").onclick = async () => { $("resume").classList.add("hidden"); try { await loadProject(last); } catch (e) { toast(e.message); } };
+  $("resumeNo").onclick = () => $("resume").classList.add("hidden");
+}
+let toastTimer = 0;
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 3200); }
+
+// =====================================================================================
+// Galerie d'exemples (visuels originaux dessinés par le site)
+// =====================================================================================
+function noise2(seed) {
+  const h = (x, y) => { let n = x * 374761393 + y * 668265263 + seed * 2246822519; n = (n ^ (n >>> 13)) * 1274126177; return ((n ^ (n >>> 16)) >>> 0) / 4294967295; };
+  const sm = t => t * t * (3 - 2 * t);
+  const v = (x, y) => { const xi = Math.floor(x), yi = Math.floor(y), xf = sm(x - xi), yf = sm(y - yi);
+    const a = h(xi, yi), b = h(xi + 1, yi), c = h(xi, yi + 1), d = h(xi + 1, yi + 1);
+    return a + (b - a) * xf + (c - a) * yf + (a - b - c + d) * xf * yf; };
+  return (x, y) => v(x, y) * 0.6 + v(x * 2.1, y * 2.1) * 0.28 + v(x * 4.3, y * 4.3) * 0.12;
+}
+const EXAMPLES = [
+  { name: "Racing", desc: "Deux bandes de course et un numéro", pal: ["#13161c", "#f2f2f2", "#ff5a1f"],
+    texts: [{ text: "07", font: "Anton", size: 70, color: "#f2f2f2", fx: 0.28, fy: 0.62 }],
+    draw(g, w, h, P) { g.fillStyle = P[0]; g.fillRect(0, 0, w, h);
+      const sw = w * 0.11, x = w * 0.55;
+      g.fillStyle = P[2]; g.fillRect(x, 0, sw, h); g.fillStyle = P[1]; g.fillRect(x + sw * 1.25, 0, sw * 0.45, h); g.fillRect(x - sw * 0.7, 0, sw * 0.45, h); } },
+  { name: "Vagues", desc: "Ondes superposées en quatre teintes", pal: ["#0d3b4c", "#1f7a8c", "#7fc8c4", "#f4efe6"],
+    draw(g, w, h, P) { g.fillStyle = P[0]; g.fillRect(0, 0, w, h);
+      [[0.30, P[1]], [0.52, P[2]], [0.74, P[3]]].forEach(([fy, c], i) => {
+        g.fillStyle = c; g.beginPath(); g.moveTo(0, h);
+        for (let x = 0; x <= w; x += 4) g.lineTo(x, h * fy + Math.sin(x / w * Math.PI * (2 + i) + i) * h * 0.05 + Math.sin(x / w * Math.PI * 7 + i * 2) * h * 0.012);
+        g.lineTo(w, h); g.closePath(); g.fill(); }); } },
+  { name: "Camouflage", desc: "Motif camouflage urbain", pal: ["#2b2f33", "#565d63", "#8a9196", "#c9ccce"],
+    draw(g, w, h, P) { const n = noise2(7), m = noise2(19), id = g.createImageData(w, h), rgb = P.map(hexRGB);
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const v = n(x / w * 4.5, y / w * 4.5), u = m(x / w * 6 + 3, y / w * 6), c = u > 0.62 ? 3 : v < 0.38 ? 0 : v < 0.52 ? 1 : 2;
+        const o = (y * w + x) * 4; id.data[o] = rgb[c][0]; id.data[o + 1] = rgb[c][1]; id.data[o + 2] = rgb[c][2]; id.data[o + 3] = 255; }
+      g.putImageData(id, 0, 0); } },
+  { name: "Coucher néon", desc: "Soleil rétro et grille en perspective", pal: ["#1a0b2e", "#ff3d81", "#ffb000", "#7a2cff"],
+    draw(g, w, h, P) { g.fillStyle = P[0]; g.fillRect(0, 0, w, h);
+      const cx = w / 2, cy = h * 0.42, r = w * 0.36;
+      for (let i = 0; i < 2; i++) { g.fillStyle = i ? P[1] : P[2]; g.save(); g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2);
+        g.clip(); g.fillRect(0, i ? cy : cy - r, w, r); g.restore(); }
+      g.fillStyle = P[0]; for (let k = 0; k < 6; k++) { const y = cy + r * (0.12 + k * 0.16); g.fillRect(cx - r, y, 2 * r, r * 0.035 * (k + 1)); }
+      g.strokeStyle = P[3]; g.lineWidth = Math.max(2, w * 0.008); const hz = h * 0.66;
+      for (let k = 0; k < 9; k++) { const y = hz + (h - hz) * Math.pow(k / 8, 1.8); g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
+      for (let k = -8; k <= 8; k++) { g.beginPath(); g.moveTo(cx + k * w * 0.02, hz); g.lineTo(cx + k * w * 0.16, h); g.stroke(); } } },
+  { name: "Damier", desc: "Damier en biais et liseré", pal: ["#f2f2f2", "#16181d", "#e8b923"],
+    texts: [{ text: "GG", font: "Orbitron", size: 40, color: "#e8b923", fx: 0.5, fy: 0.85 }],
+    draw(g, w, h, P) { g.fillStyle = P[0]; g.fillRect(0, 0, w, h);
+      g.save(); g.translate(w / 2, h * 0.42); g.rotate(-0.22); const c = w * 0.11;
+      for (let i = -10; i < 10; i++) for (let j = -3; j < 3; j++) if (((i + j) % 2 + 2) % 2 === 0) { g.fillStyle = P[1]; g.fillRect(i * c, j * c, c, c); }
+      g.fillStyle = P[2]; g.fillRect(-w, 3.3 * c, 2 * w, c * 0.3); g.fillRect(-w, -3.6 * c, 2 * w, c * 0.3); g.restore(); } },
+];
+function drawExample(ex, w, h) {
+  const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+  const g = cv.getContext("2d"); ex.draw(g, w, h, ex.pal);
+  // couleurs franches : chaque pixel prend la couleur de la palette la plus proche
+  const id = g.getImageData(0, 0, w, h), d = id.data, P = ex.pal.map(hexRGB);
+  for (let i = 0; i < d.length; i += 4) {
+    let best = 0, bd = Infinity;
+    for (let c = 0; c < P.length; c++) { const e = (d[i] - P[c][0]) ** 2 + (d[i + 1] - P[c][1]) ** 2 + (d[i + 2] - P[c][2]) ** 2; if (e < bd) { bd = e; best = c; } }
+    d[i] = P[best][0]; d[i + 1] = P[best][1]; d[i + 2] = P[best][2]; d[i + 3] = 255;
+  }
+  g.putImageData(id, 0, 0); return cv;
+}
+function openGallery() {
+  const grid = $("galleryGrid");
+  if (!grid.childElementCount) {
+    const fr = SIDE_LAYOUT.logo.size, tw = 120, th = Math.round(tw * fr[1] / fr[0]);
+    EXAMPLES.forEach((ex, i) => {
+      const b = document.createElement("button"); b.className = "excard";
+      const th0 = drawExample(ex, tw, th); th0.className = "exthumb";
+      b.appendChild(th0);
+      b.insertAdjacentHTML("beforeend", "<b>" + ex.name + "</b><small>" + ex.desc + "</small>");
+      b.onclick = () => loadExample(i);
+      grid.appendChild(b);
+    });
+  }
+  $("gallery").classList.remove("hidden"); $("gallery").querySelector(".excard").focus();
+}
+function closeGallery() { $("gallery").classList.add("hidden"); }
+$("galleryBtn").onclick = openGallery;
+$("galleryClose").onclick = closeGallery;
+$("gallery").addEventListener("click", e => { if (e.target === $("gallery")) closeGallery(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("gallery").classList.contains("hidden")) closeGallery(); });
+async function loadExample(i) {
+  const ex = EXAMPLES[i]; closeGallery();
+  H.restoring = true;
+  try {
+    if (S.src !== "side:logo") await selectSource("side:logo");
+    const fr = SIDE_LAYOUT.logo.size, w = 600, h = Math.round(w * fr[1] / fr[0]);
+    S.texts = []; S.sel = "img";
+    $("k").value = ex.pal.length; $("kVal").textContent = ex.pal.length; $("smooth").checked = false;
+    S.baseColor = ex.pal[0]; tint = null;
+    setImage(drawExample(ex, w, h), "Exemple : " + ex.name);
+    S.slots.forEach(sl => { sl.merge = sl.color.toLowerCase() === ex.pal[0].toLowerCase(); });
+    for (const t0 of ex.texts || []) {
+      const t = { id: "t" + (++textSeq), text: t0.text, font: t0.font, size: t0.size, color: t0.color, cx: (t0.fx - 0.5) * fr[0], cy: (0.5 - t0.fy) * fr[1], rot: 0 };
+      S.texts.push(t); await renderTextMask(t);
+    }
+    renderSlots(); renderTexts(true); buildQuantCanvas(); draw2D(); invalidateGeom(); updateUI();
+  } finally { H.restoring = false; }
+  markChange(); toast("Exemple « " + ex.name + " » chargé. Modifie-le ou génère-le directement.");
+}
+
+// =====================================================================================
 // Démarrage
 // =====================================================================================
 let theme0 = "light";
@@ -1783,7 +2066,8 @@ try { theme0 = localStorage.getItem("atelier-theme") || (matchMedia("(prefers-co
 applyTheme(theme0);
 try { if (localStorage.getItem("atelier-nav") === "0") setNav(false); } catch (e) { }
 $("spinRow").classList.add("hidden");
-renderSlots(); rebuildWorkspace(); resize3D(); syncPlaceUI();
+renderSlots(); resize3D(); syncPlaceUI(); updateHistoryUI();
+rebuildWorkspace().then(() => { H.last = snapshot(); offerResume(); });
 
 </script>
 </body>
