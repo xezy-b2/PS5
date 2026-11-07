@@ -713,7 +713,7 @@ function readmeText(colors, counts, sizeMM, mode) {
 <script>
 const BAMBU_COLORS = {"PLA Basic":[["Orange","#FF6A13"],["Orange citrouille","#FF9016"],["Bleu gris","#5B6579"],["Bleu cobalt","#0056B8"],["Turquoise","#00B1B7"],["Cyan","#0086D6"],["Bleu","#0A2989"],["Gris","#8E9089"],["Argenté","#A6A9AA"],["Gris clair","#D1D3D5"],["Gris foncé","#545454"],["Vert gui","#3F8E43"],["Vert vif","#BECF00"],["Vert bambou","#00AE42"],["Noir","#000000"],["Marron","#9D432C"],["Marron cacao","#6F5034"],["Beige","#F7E6DE"],["Rose","#F55A74"],["Violet indigo","#482960"],["Violet","#5E43B7"],["Magenta","#EC008C"],["Rouge","#C12E1F"],["Rouge marron","#9D2235"],["Rose vif","#F5547C"],["Blanc de jade","#FFFFFF"],["Jaune","#F4EE2A"],["Jaune tournesol","#FEC600"],["Bronze","#847D48"],["Doré","#E4BD68"]],"PLA Matte":[["Mandarine","#F99963"],["Bleu ciel","#56B7E6"],["Bleu marine","#0078BF"],["Bleu glacier","#A3D8E1"],["Bleu foncé","#042F56"],["Gris nardo","#757575"],["Gris cendré","#9B9EA0"],["Vert pomme","#C2E189"],["Vert herbacé","#61C680"],["Vert foncé","#68724D"],["Anthracite","#000000"],["Chocolat noir","#4D3324"],["Marron latte","#D3B7A7"],["Marron foncé","#7D6556"],["Caramel","#AE835B"],["Rose sakura","#E8AFCF"],["Violet lilas","#AE96D4"],["Rouge écarlate","#DE4343"],["Terre cuite","#B15533"],["Prune","#950051"],["Rouge foncé","#BB3D43"],["Blanc ivoire","#FFFFFF"],["Blanc os","#CBC6B8"],["Jaune citron","#F7D959"],["Brun clair du désert","#E8DBB7"]],"PETG HF":[["Orange","#F75403"],["Bleu","#002E96"],["Bleu lac","#1F79E5"],["Gris","#ADB1B2"],["Gris foncé","#515151"],["Vert","#00AE42"],["Vert citron","#6EE53C"],["Vert forêt","#39541A"],["Noir","#000000"],["Marron cacahuète","#875718"],["Rouge","#BC0900"],["Blanc","#FFFFFF"],["Jaune","#FFD00B"],["Crème","#F9DFB9"]],"PETG Basic":[["Black","#000000"],["White","#FFFFFF"],["Gray","#7F7E83"],["Yellow","#FCE300"],["Red","#D6001C"],["Reflex Blue","#001489"],["Dark Brown","#4F2C1D"],["Green","#009639"],["Orange","#FF671F"],["Pine Green","#034638"],["Navy Blue","#0086D6"],["Misty Blue","#688197"],["Dark Beige","#DBC8B6"],["Purple","#8A75D1"],["Sunflower Yellow","#FFB81C"],["Bright Green","#97D700"],["Hot Pink","#F277C6"]],"PLA Silk+":[["Bleu layette","#A8C6EE"],["Bleu","#008BDA"],["Gris titane","#5F6367"],["Argenté","#C8C8C8"],["Vert bonbon","#018814"],["Menthe","#96DCB9"],["Violet","#8671CB"],["Rouge bonbon","#D02727"],["Doré rose","#BA9594"],["Rose","#F7ADA6"],["Blanc","#FFFFFF"],["Champagne","#F3CFB2"],["Doré","#F4A925"]]};
 const SIDE_LAYOUT = {"logo": {"size": [217.7, 357.3], "parts": [{"id": "petite-logo", "k": 2, "t": [-0.0, 98.48]}, {"id": "grande", "k": 3, "t": [0.0, -65.25]}]}, "autre": {"size": [217.1, 357.4], "parts": [{"id": "petite", "k": 2, "t": [-0.0, 98.85]}, {"id": "grande-fente", "k": 1, "t": [0.0, -64.0]}]}};
-const PART_FIT = {"petite-logo": [0.01727, 0.03104, 6.482, 14.8], "grande": [-0.05428, 0.04213, 5.455, 23.7], "petite": [-0.02861, 0.0599, 5.91, 18.3], "grande-fente": [0.06319, -0.10858, 22.535, 46.7]};
+const PART_FIT = {"petite-logo": [0.01727, 0.03104, 6.482, 14.8], "grande": [-0.05428, 0.04213, 5.455, 23.7], "petite": [-0.02861, 0.0599, 5.91, 18.3], "grande-fente": [0.0542, 0.0044, 22.922, 38.5]};
 </script>
 <script type="module">
 import * as THREE from "three";
@@ -1389,16 +1389,16 @@ function rebuildBody(samples) {
   // façade du lecteur de disque : on ferme l'ouverture avant / arrière du renflement de sa coque
   if (driveCaps) { consoleRoot.remove(driveCaps); driveCaps.traverse(o => o.geometry && o.geometry.dispose()); }
   driveCaps = new THREE.Group();
-  const bulge = []; for (let b = 0; b < n; b++) if (!isNaN(DRV[b]) && DRV[b] + 6 < Lf[b] - 8) bulge.push(b);
+  const bulge = []; for (let b = 0; b < n; b++) if (!isNaN(DRV[b]) && DRV[b] + 3 < Lf[b] - 6) bulge.push(b);
   if (bulge.length > 4) {
     const shp = new THREE.Shape(), b0 = bulge[0], b1 = bulge[bulge.length - 1];
-    const outer = b => (isNaN(DRV[b]) ? Lf[b] : Math.min(DRV[b] + 2.2, Lf[b])) ;
+    const outer = b => (isNaN(DRV[b]) ? Lf[b] - 4 : Math.min(DRV[b] + 3, Lf[b] - 4));
     shp.moveTo(Lf[b0] - 4, b0 * STEP);
     for (let b = b0; b <= b1; b++) shp.lineTo(outer(b), b * STEP);
     for (let b = b1; b >= b0; b--) shp.lineTo(Lf[b] - 4, b * STEP);
     shp.closePath();
     const capMat = new THREE.MeshPhysicalMaterial({ color: 0x0b0c0e, roughness: 0.4, clearcoat: 0.8, side: THREE.DoubleSide });
-    for (const z of [zbm - 0.4, zfm + 0.4]) { const m = new THREE.Mesh(new THREE.ShapeGeometry(shp, 2), capMat); m.position.z = z; driveCaps.add(m); }
+    for (const z of [zbm + 3, zfm - 3]) { const m = new THREE.Mesh(new THREE.ShapeGeometry(shp, 2), capMat); m.position.z = z; driveCaps.add(m); }
   }
   consoleRoot.add(driveCaps);
 }
