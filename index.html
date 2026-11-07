@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -11,8 +11,19 @@
     --bg:#EEF0F3; --panel:#FFFFFF; --line:#E1E4E9; --line2:#CDD2DA; --ink:#15171C; --muted:#5F6673; --faint:#8A919C;
     --stage:#1C1E23; --stage2:#25282E; --accent:#2346D8; --accent-2:#1A37B5; --accent-soft:#E7ECFD;
     --ok:#1C7F52; --warn:#9A6212; --warn-soft:#FBF1E0; --err:#B83434;
+    --hover:#F6F7F9; --sel:#FAFAFB; --drop:#FAFBFC; --note-ink:#24357a; --warn-ink:#6B4510; --danger-soft:#FBEDED;
+    --stage-line:#25282E; --stage-ink:#C3C8D1; --pill:#ffffff12; --pill-line:#ffffff1a;
     --r:10px; --r-sm:7px;
     --ui:"Archivo",system-ui,sans-serif;
+    color-scheme:light;
+  }
+  [data-theme="light"]{--stage:#D9DCE1;--stage-line:#CFD3D9;--stage-ink:#3B414C;--pill:#ffffffb3;--pill-line:#15171c14}
+  [data-theme="dark"]{
+    color-scheme:dark;
+    --bg:#101215; --panel:#17191D; --line:#262A30; --line2:#353A42; --ink:#ECEEF2; --muted:#9BA2AE; --faint:#6F7682;
+    --stage:#0D0E11; --stage-line:#17191D; --stage-ink:#BFC4CD; --pill:#ffffff10; --pill-line:#ffffff18;
+    --accent:#5A78FF; --accent-2:#4866F2; --accent-soft:#1B2445; --warn-soft:#2C2312; --ok:#4CC28A; --err:#F07575; --warn:#E3A84C;
+    --hover:#1F2227; --sel:#1C1F24; --drop:#14161A; --note-ink:#B9C6F3; --warn-ink:#F0CF98; --danger-soft:#3A1E20;
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:400 14px/1.45 var(--ui);font-variation-settings:"wdth" 100;-webkit-font-smoothing:antialiased}
@@ -28,8 +39,11 @@
   .brand .model{font-size:13px;color:var(--muted);font-weight:500}
   .tabs{display:flex;gap:2px;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:3px}
   .tabs button{border:0;background:none;padding:6px 14px;border-radius:7px;color:var(--muted);cursor:pointer;font-weight:600;font-size:13px}
-  .tabs button.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px #15171c1f}
+  .tabs button.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px #0000002a}
   .spacer{flex:1}
+  .theme{width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--line2);border-radius:9px;background:var(--panel);color:var(--ink);cursor:pointer;padding:0}
+  .theme:hover{background:var(--hover)}
+  .theme .moon{display:none} [data-theme="dark"] .theme .sun{display:none} [data-theme="dark"] .theme .moon{display:block}
   .stats{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
   .actions{display:flex;gap:8px}
   .progress{position:absolute;left:0;right:0;bottom:-1px;height:2px;background:transparent;display:none}
@@ -53,23 +67,23 @@
   .field{display:flex;flex-direction:column;gap:5px}
   .field > span{color:var(--muted);font-size:12px}
   input[type=number],input[type=text],select{background:var(--panel);border:1px solid var(--line2);border-radius:var(--r-sm);padding:7px 9px;width:100%;font-size:13px}
-  input[type=number]:hover,input[type=text]:hover,select:hover{border-color:#B9BFC9}
+  input[type=number]:hover,input[type=text]:hover,select:hover{border-color:var(--faint)}
   input[type=range]{width:100%;accent-color:var(--ink)}
   input[type=checkbox]{accent-color:var(--ink);width:15px;height:15px}
   .val{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
   .btn{border:1px solid var(--line2);background:var(--panel);border-radius:var(--r-sm);padding:7px 12px;cursor:pointer;font-size:13px;font-weight:600}
-  .btn:hover{background:#F6F7F9;border-color:#B9BFC9}
+  .btn:hover{background:var(--hover);border-color:#B9BFC9}
   .btn:disabled{opacity:.45;cursor:not-allowed}
-  .btn.primary{background:var(--ink);border-color:var(--ink);color:#fff}
-  .btn.primary:hover{background:#2A2D34}
+  .btn.primary{background:var(--ink);border-color:var(--ink);color:var(--panel)}
+  .btn.primary:hover{opacity:.88;background:var(--ink)}
   .btn.accent{background:var(--accent);border-color:var(--accent);color:#fff}
   .btn.accent:hover{background:var(--accent-2)}
   .btn.block{width:100%;padding:10px}
   .btnrow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
   .btnrow .btn{padding:7px 4px;font-weight:500}
   .hint{color:var(--muted);font-size:12.5px;margin:8px 0 0;line-height:1.5}
-  .note{font-size:12.5px;border-radius:var(--r-sm);padding:9px 11px;margin-top:10px;background:var(--accent-soft);color:#24357a}
-  .note.warn{background:var(--warn-soft);color:#6B4510}
+  .note{font-size:12.5px;border-radius:var(--r-sm);padding:9px 11px;margin-top:10px;background:var(--accent-soft);color:var(--note-ink)}
+  .note.warn{background:var(--warn-soft);color:var(--warn-ink)}
   .msg{font-size:12.5px;margin-top:8px;min-height:0;color:var(--muted)}
   .msg:empty{display:none}
   .msg.err{color:var(--err)} .msg.ok{color:var(--ok)}
@@ -79,15 +93,15 @@
   .parts .grp{grid-column:1/-1;font-size:12px;color:var(--muted);margin:10px 0 0}
   .parts .grp:first-child{margin-top:0}
   .parts button{display:flex;align-items:center;gap:10px;text-align:left;background:var(--panel);border:1px solid var(--line2);border-radius:var(--r);padding:9px 10px;cursor:pointer}
-  .parts button:hover{border-color:#B0B6C0}
-  .parts button.on{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink) inset;background:#FAFAFB}
+  .parts button:hover{border-color:var(--faint)}
+  .parts button.on{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink) inset;background:var(--sel)}
   .parts button b{display:block;font-size:13px;font-weight:650}
   .parts button small{display:block;font-size:11.5px;color:var(--muted);margin-top:1px}
   .parts svg{flex:none}
-  .parts .pk-on{fill:var(--ink)} .parts .pk-off{fill:#DADEE4}
+  .parts .pk-on{fill:var(--ink)} .parts .pk-off{fill:var(--line2)}
 
-  .drop{border:1.5px dashed var(--line2);border-radius:var(--r);padding:18px;text-align:center;color:var(--muted);cursor:pointer;background:#FAFBFC;font-size:13px}
-  .drop:hover,.drop.over{border-color:var(--ink);color:var(--ink);background:#F4F5F7}
+  .drop{border:1.5px dashed var(--line2);border-radius:var(--r);padding:18px;text-align:center;color:var(--muted);cursor:pointer;background:var(--drop);font-size:13px}
+  .drop:hover,.drop.over{border-color:var(--ink);color:var(--ink);background:var(--hover)}
   .drop img{max-width:100%;max-height:120px;border-radius:6px;display:block;margin:0 auto 8px}
 
   /* ---------- couleurs ---------- */
@@ -100,7 +114,7 @@
   .slot .pct{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:40px;text-align:right}
   .slot label{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px;cursor:pointer;white-space:nowrap}
   .del,.iconbtn{border:0;background:none;color:var(--faint);cursor:pointer;font-size:15px;width:26px;height:26px;border-radius:6px;line-height:1}
-  .del:hover:not(:disabled),.iconbtn:hover{color:var(--err);background:#FBEDED}
+  .del:hover:not(:disabled),.iconbtn:hover{color:var(--err);background:var(--danger-soft)}
   .del:disabled{opacity:.3;cursor:not-allowed}
   .basecolor{display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:center;margin:12px 0 4px}
   .basecolor b{font-size:13px;font-weight:600}
@@ -134,7 +148,7 @@
   canvas{display:block;width:100%;height:100%}
   #c2d{cursor:grab;touch-action:none}
   #c2d.drag{cursor:grabbing}
-  .overlay{position:absolute;left:16px;bottom:16px;max-width:calc(100% - 32px);background:#ffffff12;border:1px solid #ffffff1a;border-radius:8px;padding:7px 11px;font-size:12px;color:#C3C8D1;backdrop-filter:blur(8px)}
+  .overlay{position:absolute;left:16px;bottom:16px;max-width:calc(100% - 32px);background:var(--pill);border:1px solid var(--pill-line);border-radius:8px;padding:7px 11px;font-size:12px;color:var(--stage-ink);backdrop-filter:blur(8px)}
   .badge{position:absolute;right:16px;top:16px;background:#F4C46B;color:#3a2700;font-weight:650;font-size:12px;border-radius:8px;padding:6px 11px;display:none}
   .empty{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;color:#8C93A0;font-size:14px;text-align:center}
 
@@ -166,6 +180,10 @@
   </nav>
   <div class="spacer"></div>
   <div class="stats" id="stats"></div>
+  <button class="theme" id="themeBtn" aria-label="Changer de thème">
+    <svg class="sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+    <svg class="moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.8 6.8 0 0 0 10.7 10.7z"/></svg>
+  </button>
   <div class="actions">
     <button class="btn primary" id="gen" disabled>Générer la 3D</button>
     <button class="btn accent" id="dl" disabled>Télécharger le .3mf</button>
@@ -291,7 +309,7 @@
   </div>
   <div class="view" id="vcon">
     <canvas id="ccon"></canvas>
-    <div class="overlay" id="ovcon">Corps de console simplifié. Les coques générées apparaissent avec leurs couleurs.</div>
+    <div class="overlay" id="ovcon">Corps de console reconstitué, tes coques sont les vraies. Les coques générées apparaissent avec leurs couleurs.</div>
   </div>
 </main>
 </div>
@@ -691,6 +709,7 @@ const SIDE_LAYOUT = {"logo": {"size": [217.7, 357.3], "parts": [{"id": "petite-l
 <script type="module">
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { zipSync, strToU8, unzlibSync } from "fflate";
 
 const $ = id => document.getElementById(id);
@@ -1110,8 +1129,8 @@ function draw2DNow() {
   if (!$("v2d").classList.contains("on")) return;
   size2D();
   const W = c2d.width, H = c2d.height, ctx = c2d.getContext("2d"), dpr = window.devicePixelRatio || 1;
-  ctx.fillStyle = "#1C1E23"; ctx.fillRect(0, 0, W, H);
-  ctx.strokeStyle = "#23262C"; ctx.lineWidth = 1;
+  ctx.fillStyle = cssVar("--stage"); ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = cssVar("--stage-line"); ctx.lineWidth = 1;
   for (let x = 0; x < W; x += 24 * dpr) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
   for (let y = 0; y < H; y += 24 * dpr) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
   if (!S.pieces.length) return;
@@ -1268,15 +1287,78 @@ function recolor3D() {
 // Aperçu console (schématique)
 // =====================================================================================
 const VC = makeView($("ccon"), false);
-const CORE = 30, CH = 357.5, CD = 217.5;            // demi-épaisseur du corps, hauteur, profondeur (mm)
-VC.scene.add(new THREE.Mesh(new THREE.BoxGeometry(CORE * 2, CH - 4, CD - 4), new THREE.MeshStandardMaterial({ color: 0x15171c, roughness: 0.4, metalness: 0.2 })).translateY(CH / 2));
-const floor = new THREE.Mesh(new THREE.CircleGeometry(420, 64), new THREE.MeshStandardMaterial({ color: 0x24272d, roughness: 1 }));
-floor.rotation.x = -Math.PI / 2; VC.scene.add(floor);
+const CORE = 30, CH = 357.5, CD = 217.5, LIFT = 8;   // demi-épaisseur du corps, hauteur, profondeur, hauteur du socle (mm)
+VC.renderer.outputColorSpace = THREE.SRGBColorSpace;
+// reflets réalistes : environnement de studio
+VC.scene.environment = new THREE.PMREMGenerator(VC.renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+VC.scene.children.filter(o => o.isLight).forEach(o => { o.intensity *= 0.55; });
+
+function canvasTex(wmm, hmm, k, draw) {
+  const c = document.createElement("canvas"); c.width = Math.round(wmm * k); c.height = Math.round(hmm * k);
+  const g = c.getContext("2d"); g.scale(k, k); draw(g, wmm, hmm);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+}
+function rr(g, x, y, w, h, r) { g.beginPath(); g.roundRect(x, y, w, h, r); }
+const consoleRoot = new THREE.Group(); consoleRoot.position.y = LIFT; VC.scene.add(consoleRoot);
+(function buildBody() {
+  // corps noir brillant : profil arrondi extrudé sur l'épaisseur
+  const shp = new THREE.Shape(), w = CD - 6, h = CH - 6, r = 12, x0 = -w / 2, y0 = 3;
+  shp.moveTo(x0 + r, y0); shp.lineTo(x0 + w - r, y0); shp.quadraticCurveTo(x0 + w, y0, x0 + w, y0 + r);
+  shp.lineTo(x0 + w, y0 + h - r); shp.quadraticCurveTo(x0 + w, y0 + h, x0 + w - r, y0 + h);
+  shp.lineTo(x0 + r, y0 + h); shp.quadraticCurveTo(x0, y0 + h, x0, y0 + h - r); shp.lineTo(x0, y0 + r); shp.quadraticCurveTo(x0, y0, x0 + r, y0);
+  const geo = new THREE.ExtrudeGeometry(shp, { depth: CORE * 2 - 6, bevelEnabled: true, bevelThickness: 3, bevelSize: 3, bevelSegments: 4, curveSegments: 10 });
+  geo.rotateY(Math.PI / 2); geo.translate(-(CORE - 3), 0, 0);
+  const black = new THREE.MeshPhysicalMaterial({ color: 0x0b0c0e, roughness: 0.32, metalness: 0.0, clearcoat: 1, clearcoatRoughness: 0.18 });
+  consoleRoot.add(new THREE.Mesh(geo, black));
+  const W = CORE * 2 - 8;
+  const panel = (tex, wmm, hmm) => new THREE.Mesh(new THREE.PlaneGeometry(wmm, hmm),
+    new THREE.MeshPhysicalMaterial({ map: tex, roughness: 0.38, clearcoat: 0.8, clearcoatRoughness: 0.25, transparent: true }));
+  // avant : 2 ports USB-C, boutons marche / éjection, témoin lumineux
+  const front = panel(canvasTex(W, CH - 30, 6, (g, w, h) => {
+    g.fillStyle = "rgba(0,0,0,0)"; g.clearRect(0, 0, w, h);
+    const port = (cx, cy) => { rr(g, cx - 4.6, cy - 1.7, 9.2, 3.4, 1.7); g.fillStyle = "#050506"; g.fill(); rr(g, cx - 3, cy - 0.45, 6, 0.9, 0.45); g.fillStyle = "#3a3d44"; g.fill(); };
+    port(w / 2, h - 34); port(w / 2, h - 22);
+    g.strokeStyle = "#2b2e34"; g.lineWidth = 0.6;
+    rr(g, w / 2 - 7, 18, 14, 3.2, 1.6); g.stroke(); rr(g, w / 2 - 7, 28, 14, 3.2, 1.6); g.stroke();
+    g.fillStyle = "#3a3d44"; g.font = "600 2.2px Archivo, sans-serif"; g.textAlign = "center"; g.fillText("⏻", w / 2 + 11, 20.6); g.fillText("⏏", w / 2 + 11, 30.6);
+    const grd = g.createLinearGradient(w / 2 - 9, 0, w / 2 + 9, 0); grd.addColorStop(0, "rgba(120,170,255,0)"); grd.addColorStop(.5, "rgba(170,205,255,.95)"); grd.addColorStop(1, "rgba(120,170,255,0)");
+    g.fillStyle = grd; g.fillRect(w / 2 - 9, 8, 18, 0.9);
+  }), W, CH - 30);
+  front.position.set(0, CH / 2 + 6, CD / 2 + 0.35); consoleRoot.add(front);
+  // arrière : aérations + connectique
+  const back = panel(canvasTex(W, CH - 30, 6, (g, w, h) => {
+    g.clearRect(0, 0, w, h);
+    g.fillStyle = "#050506";
+    for (let y = 14; y < h * 0.62; y += 3.6) { rr(g, 6, y, w - 12, 1.7, 0.85); g.fill(); }
+    const slot = (x, y, ww, hh, r) => { rr(g, x - ww / 2, y - hh / 2, ww, hh, r); g.fillStyle = "#050506"; g.fill(); g.strokeStyle = "#2a2d33"; g.lineWidth = 0.4; g.stroke(); };
+    const by = h - 60;
+    slot(w / 2, by, 15, 5.4, 1.2);            // HDMI
+    slot(w / 2, by + 12, 13, 5, 0.6);         // USB-A
+    slot(w / 2, by + 21, 13, 5, 0.6);         // USB-A
+    slot(w / 2, by + 33, 15, 12, 1);          // Ethernet
+    slot(w / 2, by + 48, 9, 5, 2.5);          // alimentation
+  }), W, CH - 30);
+  back.position.set(0, CH / 2 + 6, -CD / 2 - 0.35); back.rotation.y = Math.PI; consoleRoot.add(back);
+  // dessus et dessous : fentes d'aération
+  const vents = () => canvasTex(W, CD - 40, 6, (g, w, h) => {
+    g.clearRect(0, 0, w, h); g.fillStyle = "#050506";
+    for (let y = 6; y < h - 6; y += 3.4) { rr(g, 5, y, w - 10, 1.5, 0.75); g.fill(); }
+  });
+  const top = panel(vents(), W, CD - 40); top.rotation.x = -Math.PI / 2; top.position.set(0, CH + 0.35, 0); consoleRoot.add(top);
+  // socle rond
+  const stand = new THREE.Mesh(new THREE.CylinderGeometry(58, 62, LIFT, 64), new THREE.MeshPhysicalMaterial({ color: 0x15161a, roughness: 0.45, clearcoat: 0.6 }));
+  stand.position.set(0, LIFT / 2, 0); VC.scene.add(stand);
+})();
+// sol et ombre douce
+const shadow = new THREE.Mesh(new THREE.PlaneGeometry(420, 520), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false,
+  map: canvasTex(100, 100, 2, (g) => { const gr = g.createRadialGradient(50, 50, 4, 50, 50, 50); gr.addColorStop(0, "rgba(0,0,0,.55)"); gr.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = gr; g.fillRect(0, 0, 100, 100); }) }));
+shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.2; VC.scene.add(shadow);
+
 let conGroup = null, conDirty = true;
 function resizeCon() { resizeView(VC); }
 async function buildConsole() {
   conDirty = false;
-  if (conGroup) { VC.scene.remove(conGroup); conGroup.traverse(o => o.geometry && o.geometry.dispose()); }
+  if (conGroup) { consoleRoot.remove(conGroup); conGroup.traverse(o => o.geometry && o.geometry.dispose()); }
   conGroup = new THREE.Group();
   for (const [side, L] of Object.entries(SIDE_LAYOUT)) {
     for (const p of L.parts) {
@@ -1291,12 +1373,31 @@ async function buildConsole() {
         if (side === "logo") { pos[i] = CORE + z; pos[i + 1] = y; pos[i + 2] = -x; }
         else { pos[i] = -CORE - z; pos[i + 1] = y; pos[i + 2] = x; }
       }
-      conGroup.add(meshObject({ pos, tri: mesh.tri }, r ? r.ext : null, r ? r.cols : ["", "#e9e9ec"]));
+      const o = meshObject({ pos, tri: mesh.tri }, r ? r.ext : null, r ? r.cols : ["", "#eef0f3"]);
+      o.material.roughness = 0.62; o.material.envMapIntensity = 0.6;
+      conGroup.add(o);
     }
   }
-  VC.scene.add(conGroup); VC.dirty = true;
+  consoleRoot.add(conGroup); VC.dirty = true;
 }
-VC.camera.position.set(520, 330, 380); VC.controls.target.set(0, CH / 2, 0); VC.controls.update();
+VC.camera.position.set(560, 360, 420); VC.controls.target.set(0, CH / 2, 0); VC.controls.update();
+VC.controls.maxPolarAngle = Math.PI * 0.49; VC.controls.minDistance = 250; VC.controls.maxDistance = 1600;
+
+// =====================================================================================
+// Thème clair / sombre
+// =====================================================================================
+function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem("atelier-theme", t); } catch (e) { }
+  $("themeBtn").setAttribute("aria-label", t === "dark" ? "Passer en thème clair" : "Passer en thème sombre");
+  $("themeBtn").title = t === "dark" ? "Thème clair" : "Thème sombre";
+  const stage = new THREE.Color(cssVar("--stage"));
+  V3.scene.background = stage; VC.scene.background = stage;
+  grid.material.color = new THREE.Color(cssVar("--stage-line"));
+  V3.dirty = VC.dirty = true; silBuilt = null; draw2D();
+}
+$("themeBtn").onclick = () => applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
 
 (function loop() {
   requestAnimationFrame(loop);
@@ -1473,6 +1574,9 @@ $("dl").onclick = async () => {
 // =====================================================================================
 // Démarrage
 // =====================================================================================
+let theme0 = "light";
+try { theme0 = localStorage.getItem("atelier-theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"); } catch (e) { }
+applyTheme(theme0);
 $("spinRow").classList.add("hidden");
 renderSlots(); rebuildWorkspace(); resize3D(); syncPlaceUI();
 
