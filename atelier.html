@@ -180,6 +180,11 @@
   .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:9px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:70;max-width:calc(100% - 32px)}
   .toast.show{opacity:1;transform:translate(-50%,0)}
   @media (max-width:1180px){.stats{display:none}}
+  .cmbar{position:absolute;left:16px;top:16px;display:flex;gap:6px;align-items:center;z-index:2}
+  .cmbar #cmOpts{display:flex;gap:6px}
+  .cmbar #cmOpts.hidden{display:none}
+  .cmbar select{width:auto}
+  .cmbar .btn{padding:6px 11px;font-size:12.5px}
   .empty{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;color:#8C93A0;font-size:14px;text-align:center}
 
   @media (max-width:900px){
@@ -352,6 +357,15 @@
   </div>
   <div class="view" id="vcon">
     <canvas id="ccon"></canvas>
+    <div class="cmbar">
+      <button class="btn" id="cmBtn">Importer un modèle 3D</button>
+      <span id="cmOpts" class="hidden">
+        <select id="cmMode" aria-label="Affichage du modèle importé"><option value="asis" selected>Tel quel</option><option value="covers">Avec mes coques</option></select>
+        <button class="btn" id="cmSpin" title="Tourner le modèle de 90°">↻ 90°</button>
+        <button class="btn" id="cmReset">Modèle par défaut</button>
+      </span>
+      <input type="file" id="cmIn" accept=".glb,model/gltf-binary" class="hidden">
+    </div>
     <div class="overlay" id="ovcon">Tes coques sur une PS5 Slim. Modèle de la console : <a href="https://sketchfab.com/3d-models/ps5-slim-0f046a340b8c4038a39b0fe979c6dce1" target="_blank" rel="nofollow">« PS5 Slim »</a> par <a href="https://sketchfab.com/boykeezeke1" target="_blank" rel="nofollow">boykee1</a>, licence <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="nofollow">CC BY 4.0</a> (coques d'origine retirées).</div>
   </div>
 </main>
@@ -1577,6 +1591,46 @@ function alignToGlb() {
   filler.position.set(0, y0 + 2 + h / 2, 0); consoleRoot.add(filler);
 }
 let filler = null;
+
+// =====================================================================================
+// Modèle de console importé depuis l'ordinateur du visiteur (jamais envoyé ni enregistré)
+// =====================================================================================
+let customModel = null, customSpin = 0, defaultCredit = null;
+function applyConsoleView() {
+  const custom = !!customModel, covers = !custom || $("cmMode").value === "covers";
+  if (glbBody) glbBody.visible = !custom;
+  if (custom) procParts().forEach(o => { o.visible = false; });
+  if (conGroup) conGroup.visible = covers;
+  if (filler) filler.visible = !custom;
+  if (customModel) { customModel.visible = true; customModel.rotation.y = customSpin * Math.PI / 2; }
+  $("cmOpts").classList.toggle("hidden", !custom);
+  if (defaultCredit === null) defaultCredit = $("ovcon").innerHTML;
+  $("ovcon").innerHTML = custom ? "Modèle importé depuis ton ordinateur. Il s'affiche seulement dans ce navigateur et n'est ni envoyé ni enregistré." : defaultCredit;
+  VC.dirty = true;
+}
+$("cmBtn").onclick = () => $("cmIn").click();
+$("cmIn").onchange = async () => {
+  const f = $("cmIn").files[0]; $("cmIn").value = ""; if (!f) return;
+  try {
+    const g = await new GLTFLoader().parseAsync(await f.arrayBuffer(), "");
+    const root = g.scene; root.updateMatrixWorld(true);
+    const bb = new THREE.Box3().setFromObject(root);
+    if (bb.isEmpty()) throw new Error("Ce fichier ne contient aucun objet 3D.");
+    const size = bb.getSize(new THREE.Vector3()), sc = CH / size.y;
+    root.position.set(-(bb.min.x + bb.max.x) / 2, -bb.min.y, -(bb.min.z + bb.max.z) / 2);
+    const wrap = new THREE.Group(); wrap.add(root); wrap.scale.setScalar(sc);
+    if (customModel) { consoleRoot.remove(customModel); customModel.traverse(o => o.geometry && o.geometry.dispose()); }
+    customModel = wrap; customSpin = 0; consoleRoot.add(wrap);
+    applyConsoleView();
+    toast("Modèle chargé : " + f.name + ". Il reste sur ton ordinateur.");
+  } catch (e) { toast("Impossible de lire ce modèle : " + (e.message || e)); }
+};
+$("cmMode").onchange = applyConsoleView;
+$("cmSpin").onclick = () => { customSpin = (customSpin + 1) % 4; applyConsoleView(); };
+$("cmReset").onclick = () => {
+  if (customModel) { consoleRoot.remove(customModel); customModel.traverse(o => o.geometry && o.geometry.dispose()); customModel = null; }
+  applyConsoleView(); if (conGroup) alignToGlb();
+};
 function RoundedBox(w, h, d, r) {
   const shp = new THREE.Shape(), x = -w / 2, y = -h / 2; r = Math.min(r, w / 2 - 0.1, h / 2 - 0.1);
   shp.moveTo(x + r, y); shp.lineTo(x + w - r, y); shp.quadraticCurveTo(x + w, y, x + w, y + r); shp.lineTo(x + w, y + h - r);
@@ -1622,7 +1676,7 @@ async function buildConsole() {
     }
   }
   if (!bodyMesh) rebuildBody(samples);       // la forme des coques ne change pas : le corps est calculé une fois
-  consoleRoot.add(conGroup); alignToGlb(); VC.dirty = true;
+  consoleRoot.add(conGroup); alignToGlb(); if (customModel) applyConsoleView(); VC.dirty = true;
 }
 VC.camera.position.set(470, 230, -640); VC.controls.target.set(0, CH / 2 - 10, 0); VC.controls.update();
 VC.controls.maxPolarAngle = Math.PI * 0.49; VC.controls.minDistance = 250; VC.controls.maxDistance = 1600;
