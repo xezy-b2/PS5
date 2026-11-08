@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%2315171C%22/%3E%3CclipPath%20id%3D%22c%22%3E%3Cpath%20d%3D%22M21%209.5Q21%208%2022.6%208.1L41%209.6Q43%209.8%2043%2011.8V52.2Q43%2054.2%2041%2054.4L22.6%2055.9Q21%2056%2021%2054.5Z%22/%3E%3C/clipPath%3E%3Cg%20clip-path%3D%22url%28%23c%29%22%3E%3Crect%20x%3D%2218%22%20y%3D%224%22%20width%3D%2230%22%20height%3D%2256%22%20fill%3D%22%23FF7A45%22/%3E%3Cpath%20d%3D%22M18%204H48V26L18%2031Z%22%20fill%3D%22%235A78FF%22/%3E%3Cpath%20d%3D%22M18%2031L48%2026V31.5L18%2036.5Z%22%20fill%3D%22%2315171C%22/%3E%3Cpath%20d%3D%22M18%2036.5L48%2031.5V42L18%2047Z%22%20fill%3D%22%23FFC94A%22/%3E%3C/g%3E%3Cpath%20d%3D%22M43%2012.5C47%2013.5%2048.5%2017%2048.5%2032S47%2050.5%2043%2051.5%22%20fill%3D%22none%22%20stroke%3D%22%23ECEEF2%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Mon compte · Atelier Coque</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("atelier-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")}catch(e){}</script>
+<style>
+  :root{
+    --bg:#EEF0F3; --panel:#FFFFFF; --line:#E1E4E9; --line2:#CDD2DA; --ink:#15171C; --muted:#5F6673; --faint:#8A919C;
+    --accent:#2346D8; --accent-2:#1A37B5; --accent-soft:#E7ECFD; --hover:#F6F7F9; --thumb:#1C1E23;
+    --ok:#1F8A5B; --ok-soft:#E3F4EC; --err:#C53B3B; --err-soft:#FBE9E9;
+    --ui:"Archivo",system-ui,sans-serif; color-scheme:light;
+  }
+  [data-theme="dark"]{
+    color-scheme:dark; --bg:#101215; --panel:#17191D; --line:#262A30; --line2:#353A42; --ink:#ECEEF2; --muted:#9BA2AE; --faint:#6E7581;
+    --accent:#5A78FF; --accent-2:#4866F2; --accent-soft:#1B2445; --hover:#1F2227; --thumb:#0C0D10;
+    --ok:#4CC28A; --ok-soft:#14291F; --err:#F07575; --err-soft:#2E1717;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.5 var(--ui);-webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+  a{color:inherit}
+  button,input{font:inherit;color:inherit}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+  .wrap{width:100%;max-width:1120px;margin:0 auto;padding:0 28px}
+  .hidden{display:none!important}
+
+  /* barre */
+  .bar{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .bar .wrap{display:flex;align-items:center;gap:14px;height:64px}
+  .word{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;letter-spacing:-.01em;font-variation-settings:"wdth" 125;text-decoration:none}
+  .word .logo{border-radius:8px}
+  .bar nav{display:flex;gap:4px;margin-left:24px}
+  .bar nav a{text-decoration:none;color:var(--muted);font-size:14.5px;font-weight:500;padding:7px 11px;border-radius:8px}
+  .bar nav a:hover{color:var(--ink);background:var(--hover)}
+  .bar nav a[aria-current]{color:var(--ink);font-weight:650}
+  .spacer{flex:1}
+  .iconbtn{width:38px;height:38px;display:grid;place-items:center;border:1px solid var(--line2);border-radius:10px;background:var(--panel);cursor:pointer;padding:0}
+  .iconbtn:hover{background:var(--hover)}
+  .theme .moon{display:none} [data-theme="dark"] .theme .sun{display:none} [data-theme="dark"] .theme .moon{display:block}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line2);background:var(--panel);border-radius:10px;padding:9px 15px;font-weight:600;font-size:14px;text-decoration:none;cursor:pointer;white-space:nowrap}
+  .btn:hover{background:var(--hover)}
+  .btn:disabled{opacity:.55;cursor:default}
+  .btn.main{background:var(--ink);border-color:var(--ink);color:var(--panel)}
+  .btn.main:hover{opacity:.88}
+  .btn.accent{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.accent:hover{background:var(--accent-2)}
+  .btn.danger{color:var(--err);border-color:color-mix(in srgb,var(--err) 45%,transparent)}
+  .btn.danger:hover{background:var(--err-soft)}
+  .btn.danger.armed{background:var(--err);border-color:var(--err);color:#fff}
+  .btn.discord{background:#5865F2;border-color:#5865F2;color:#fff;width:100%;padding:11px}
+  .btn.discord:hover{background:#4752C4}
+  .btn.sm{padding:6px 11px;font-size:13px}
+
+  .av{width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:700;font-size:14px;background-size:cover;background-position:center;flex:none;overflow:hidden}
+  .usermenu{position:relative}
+  .userbtn{display:flex;align-items:center;gap:9px;border:1px solid var(--line2);background:var(--panel);border-radius:999px;padding:3px 12px 3px 3px;cursor:pointer;font-weight:600;font-size:14px}
+  .userbtn .av{width:30px;height:30px;font-size:13px}
+  .menu{position:absolute;right:0;top:calc(100% + 8px);background:var(--panel);border:1px solid var(--line2);border-radius:12px;box-shadow:0 18px 50px #0003;min-width:220px;padding:6px;z-index:30}
+  .menu a,.menu button{display:block;width:100%;text-align:left;border:0;background:none;padding:9px 11px;border-radius:8px;text-decoration:none;font-size:14px;cursor:pointer}
+  .menu a:hover,.menu button:hover{background:var(--hover)}
+  .menu hr{border:0;border-top:1px solid var(--line);margin:6px 2px}
+
+  main{flex:1;padding:36px 0 60px}
+  h1{font-size:30px;line-height:1.1;letter-spacing:-.02em;font-weight:800;font-variation-settings:"wdth" 112;margin:0}
+  h2{font-size:19px;letter-spacing:-.01em;font-weight:750;font-variation-settings:"wdth" 108;margin:0 0 4px}
+  .sub{color:var(--muted);margin:0}
+
+  /* connexion */
+  .authwrap{display:grid;grid-template-columns:1fr 1fr;gap:0;max-width:940px;margin:20px auto 0;background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 20px 60px #0000000d}
+  .authside{background:#15171C;color:#ECEEF2;padding:40px 36px;display:flex;flex-direction:column;gap:18px;position:relative}
+  .authside h1{color:#fff;font-size:32px}
+  .authside p{color:#B7BDC7;margin:0}
+  .authside ul{margin:6px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
+  .authside li{display:flex;gap:10px;color:#D8DCE3}
+  .authside li::before{content:"";width:8px;height:8px;border-radius:50%;background:#5A78FF;margin-top:7px;flex:none}
+  .authside .bands{margin-top:auto;display:flex;gap:6px}
+  .authside .bands span{height:6px;flex:1;border-radius:3px}
+  .authcard{padding:36px;display:flex;flex-direction:column;gap:14px}
+  .seg{display:flex;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:3px}
+  .seg button{flex:1;border:0;background:none;padding:8px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;color:var(--muted)}
+  .seg button.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 3px #0002}
+  .or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12.5px}
+  .or::before,.or::after{content:"";flex:1;height:1px;background:var(--line2)}
+  form{display:flex;flex-direction:column;gap:12px;margin:0}
+  label.field{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600}
+  label.field small{font-weight:400;color:var(--muted)}
+  input[type=text],input[type=email],input[type=password],input[type=search]{background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:10px 12px;width:100%;font-size:14.5px}
+  input:hover{border-color:var(--faint)}
+  .linkbtn{background:none;border:0;color:var(--muted);font-size:13px;cursor:pointer;text-decoration:underline;align-self:flex-start;padding:0}
+  .msg{margin:0;font-size:13.5px;border-radius:10px;padding:0}
+  .msg:not(:empty){padding:10px 12px}
+  .msg.err{background:var(--err-soft);color:var(--err)} .msg.ok{background:var(--ok-soft);color:var(--ok)} .msg.info{background:var(--accent-soft);color:var(--ink)}
+
+  /* profil */
+  .profile{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:26px 28px;display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+  .profile .av{width:84px;height:84px;font-size:32px}
+  .avwrap{position:relative}
+  .avedit{position:absolute;right:-2px;bottom:-2px;width:30px;height:30px;border-radius:50%;border:2px solid var(--panel);background:var(--ink);color:var(--panel);display:grid;place-items:center;cursor:pointer;padding:0}
+  .pinfo{flex:1;min-width:220px;display:flex;flex-direction:column;gap:6px}
+  .badges{display:flex;gap:8px;flex-wrap:wrap}
+  .badge{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;border:1px solid var(--line2);border-radius:999px;padding:3px 10px;color:var(--muted)}
+  .badge.discord{color:#5865F2;border-color:#5865F288}
+  .stats{display:flex;gap:0;border-left:1px solid var(--line)}
+  .stat{padding:4px 22px;border-right:1px solid var(--line);min-width:120px}
+  .stat b{display:block;font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;font-variation-settings:"wdth" 110;letter-spacing:-.01em}
+  .stat span{font-size:12.5px;color:var(--muted)}
+
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:30px 0 22px}
+  .tabs button{border:0;background:none;padding:11px 14px;font-weight:600;font-size:14.5px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tabs button.on{color:var(--ink);border-bottom-color:var(--ink)}
+  .tabs .count{font-size:12px;background:var(--line);border-radius:999px;padding:1px 7px;margin-left:6px;color:var(--ink)}
+
+  .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+  .toolbar input[type=search]{max-width:300px}
+  .toolbar select{background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:9px 10px;font:inherit;font-size:14px;color:var(--ink)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;transition:border-color .15s, box-shadow .15s}
+  .card:hover{border-color:var(--line2);box-shadow:0 10px 30px #0000000f}
+  .card .th{display:block;aspect-ratio:4/5;background:var(--thumb);position:relative;overflow:hidden}
+  .card .th img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .25s}
+  .card:hover .th img{transform:scale(1.03)}
+  .card .body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:3px;position:relative}
+  .card .name{font-weight:700;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:34px}
+  .card .meta{font-size:12.5px;color:var(--muted)}
+  .card .more{position:absolute;right:8px;top:9px;width:30px;height:30px;border:0;background:none;border-radius:8px;cursor:pointer;color:var(--muted);font-size:18px;line-height:1}
+  .card .more:hover{background:var(--hover);color:var(--ink)}
+  .card .menu{top:40px;right:8px;min-width:190px}
+  .card .open{margin-top:10px}
+  .card input[type=text]{padding:5px 8px;font-size:14px;font-weight:700}
+  .newcard{border:1.5px dashed var(--line2);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-decoration:none;color:var(--muted);min-height:280px;font-weight:600}
+  .newcard:hover{border-color:var(--ink);color:var(--ink)}
+  .newcard span{width:44px;height:44px;border-radius:50%;border:1.5px solid currentColor;display:grid;place-items:center;font-size:24px;font-weight:400}
+  .empty{grid-column:1/-1;text-align:center;padding:50px 20px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:14px}
+  .empty h3{color:var(--ink);margin:0 0 6px;font-size:18px}
+  .empty .btn{margin-top:16px}
+  .skel{aspect-ratio:4/6;border-radius:14px;background:linear-gradient(90deg,var(--line) 0%,var(--hover) 50%,var(--line) 100%);background-size:200% 100%;animation:sk 1.2s infinite}
+  @keyframes sk{to{background-position:-200% 0}}
+
+  .settings{display:grid;grid-template-columns:220px 1fr;gap:34px;align-items:start}
+  .settings .side{display:flex;flex-direction:column;gap:2px;position:sticky;top:90px}
+  .settings .side button{text-align:left;border:0;background:none;padding:9px 12px;border-radius:9px;font-weight:550;font-size:14px;color:var(--muted);cursor:pointer}
+  .settings .side button.on{background:var(--panel);color:var(--ink);font-weight:650;box-shadow:0 0 0 1px var(--line)}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px 26px;display:flex;flex-direction:column;gap:18px}
+  .panel + .panel{margin-top:18px}
+  .panel .row{display:grid;grid-template-columns:200px 1fr;gap:20px;align-items:start;padding-top:18px;border-top:1px solid var(--line)}
+  .panel .row:first-of-type{border-top:0;padding-top:0}
+  .panel .row > div:first-child b{display:block;font-size:14px}
+  .panel .row > div:first-child span{font-size:13px;color:var(--muted)}
+  .inrow{display:flex;gap:10px;flex-wrap:wrap}
+  .inrow input{flex:1;min-width:200px}
+  .panel.dangerzone{border-color:color-mix(in srgb,var(--err) 35%,var(--line))}
+  .panel.dangerzone h2{color:var(--err)}
+
+  footer{border-top:1px solid var(--line);padding:22px 0 30px;font-size:12.5px;color:var(--muted)}
+  footer p{margin:0}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:var(--panel);padding:11px 16px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:.2s;z-index:50}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .center{display:grid;place-items:center;min-height:50vh;color:var(--muted)}
+
+  @media (max-width:860px){
+    .authwrap{grid-template-columns:1fr}
+    .authside{padding:28px}
+    .stats{border-left:0;width:100%}
+    .stat:first-child{padding-left:0}
+    .settings{grid-template-columns:1fr}
+    .settings .side{flex-direction:row;overflow:auto;position:static}
+    .panel .row{grid-template-columns:1fr;gap:10px}
+    .bar nav{display:none}
+  }
+  @media (max-width:560px){ .wrap{padding:0 18px} .userbtn .nm{display:none} .userbtn{padding:3px} .stat{min-width:0;padding:4px 14px} }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="wrap">
+    <a class="word" href="./"><svg class="logo" width="30" height="30" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#15171C"/><clipPath id="logoClip"><path d="M21 9.5Q21 8 22.6 8.1L41 9.6Q43 9.8 43 11.8V52.2Q43 54.2 41 54.4L22.6 55.9Q21 56 21 54.5Z"/></clipPath><g clip-path="url(#logoClip)"><rect x="18" y="4" width="30" height="56" fill="#FF7A45"/><path d="M18 4H48V26L18 31Z" fill="#5A78FF"/><path d="M18 31L48 26V31.5L18 36.5Z" fill="#15171C"/><path d="M18 36.5L48 31.5V42L18 47Z" fill="#FFC94A"/></g><path d="M43 12.5C47 13.5 48.5 17 48.5 32S47 50.5 43 51.5" fill="none" stroke="#ECEEF2" stroke-width="2.4" stroke-linecap="round"/></svg>Atelier Coque</a>
+    <nav aria-label="Navigation"><a href="./">Accueil</a><a href="atelier.html">Atelier</a><a href="compte.html" aria-current="page">Mon compte</a></nav>
+    <div class="spacer"></div>
+    <button class="iconbtn theme" id="themeBtn" aria-label="Changer de thème">
+      <svg class="sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+      <svg class="moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.8 6.8 0 0 0 10.7 10.7z"/></svg>
+    </button>
+    <div class="usermenu hidden" id="userMenu">
+      <button class="userbtn" id="userBtn" aria-haspopup="menu" aria-expanded="false"><span class="av" id="topAv"></span><span class="nm" id="topName"></span></button>
+      <div class="menu hidden" id="userDrop" role="menu">
+        <a href="compte.html" role="menuitem">Mes modèles</a>
+        <button role="menuitem" data-go="settings">Paramètres</button>
+        <a href="atelier.html" role="menuitem">Ouvrir l'atelier</a>
+        <hr>
+        <button role="menuitem" id="topLogout">Se déconnecter</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="center" id="loading">Chargement…</div>
+
+    <!-- Connexion / inscription -->
+    <section id="authView" class="hidden">
+      <div class="authwrap">
+        <div class="authside">
+          <h1>Ton atelier,<br>partout avec toi.</h1>
+          <p>Crée un compte pour garder tes coques personnalisées et les retrouver sur n'importe quel appareil.</p>
+          <ul>
+            <li>Tes modèles enregistrés en un clic depuis l'atelier</li>
+            <li>Reprends un design là où tu l'as laissé</li>
+            <li>Connexion express avec Discord</li>
+          </ul>
+          <div class="bands"><span style="background:#5A78FF"></span><span style="background:#FFC94A"></span><span style="background:#FF7A45"></span></div>
+        </div>
+        <div class="authcard">
+          <div id="authMain">
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div class="seg" role="tablist"><button id="tabIn" class="on" role="tab">Connexion</button><button id="tabUp" role="tab">Créer un compte</button></div>
+              <button class="btn discord" id="discordBtn"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.3 5.3A16.6 16.6 0 0 0 15.2 4l-.5 1a15.4 15.4 0 0 0-5.4 0L8.8 4a16.5 16.5 0 0 0-4.1 1.3C2.1 9.2 1.4 13 1.7 16.7a16.7 16.7 0 0 0 5.1 2.6l1.1-1.7c-.6-.2-1.2-.5-1.7-.8l.4-.3a11.9 11.9 0 0 0 10.2 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.7a16.6 16.6 0 0 0 5.1-2.6c.4-4.3-.7-8-2.9-11.4ZM8.7 14.5c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Z"/></svg>Continuer avec Discord</button>
+              <div class="or"><span>ou avec ton e-mail</span></div>
+              <form id="authForm" novalidate>
+                <label class="field hidden" id="pseudoF">Pseudo<input type="text" id="authPseudo" maxlength="30" autocomplete="nickname"></label>
+                <label class="field">E-mail<input type="email" id="authEmail" autocomplete="email"></label>
+                <label class="field">Mot de passe<input type="password" id="authPass" autocomplete="current-password"><small id="passHint" class="hidden">8 caractères minimum.</small></label>
+                <button class="btn main" id="authSubmit" type="submit">Se connecter</button>
+                <button class="linkbtn" id="forgotBtn" type="button">Mot de passe oublié ?</button>
+              </form>
+            </div>
+          </div>
+          <div id="authReset" class="hidden">
+            <form id="resetForm" novalidate>
+              <h2>Nouveau mot de passe</h2>
+              <p class="sub">Choisis le mot de passe que tu utiliseras désormais.</p>
+              <label class="field">Nouveau mot de passe<input type="password" id="resetPass" autocomplete="new-password"><small>8 caractères minimum.</small></label>
+              <button class="btn main" type="submit">Enregistrer le mot de passe</button>
+            </form>
+          </div>
+          <p class="msg" id="authMsg" role="status"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Espace connecté -->
+    <section id="homeView" class="hidden">
+      <div class="profile">
+        <div class="avwrap"><span class="av" id="pAv"></span>
+          <button class="avedit" id="avBtn" title="Changer la photo de profil" aria-label="Changer la photo de profil"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/></svg></button>
+          <input type="file" id="avIn" accept="image/*" class="hidden">
+        </div>
+        <div class="pinfo">
+          <h1 id="pName"></h1>
+          <p class="sub" id="pSince"></p>
+          <div class="badges" id="pBadges"></div>
+        </div>
+        <div class="stats">
+          <div class="stat"><b id="sCount">–</b><span>modèles</span></div>
+          <div class="stat"><b id="sLast">–</b><span>dernière modif.</span></div>
+          <div class="stat"><b id="sSize">–</b><span>espace utilisé</span></div>
+        </div>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <button id="tModels" class="on" role="tab">Mes modèles<span class="count" id="tCount">0</span></button>
+        <button id="tSettings" role="tab">Paramètres</button>
+      </div>
+
+      <div id="modelsPane">
+        <div class="toolbar">
+          <input type="search" id="search" placeholder="Rechercher un modèle" aria-label="Rechercher un modèle">
+          <select id="sort" aria-label="Trier"><option value="recent">Plus récents</option><option value="old">Plus anciens</option><option value="name">Nom (A → Z)</option></select>
+          <div class="spacer"></div>
+          <a class="btn main" href="atelier.html">+ Nouveau modèle</a>
+        </div>
+        <div class="grid" id="grid"></div>
+      </div>
+
+      <div id="settingsPane" class="hidden">
+        <div class="settings">
+          <div class="side" role="tablist">
+            <button class="on" data-s="sProfile">Profil</button>
+            <button data-s="sSecurity">Connexion et sécurité</button>
+            <button data-s="sDanger">Compte</button>
+          </div>
+          <div>
+            <div class="panel" id="sProfile">
+              <div><h2>Profil</h2><p class="sub">Ce que tes amis verront de toi.</p></div>
+              <div class="row"><div><b>Pseudo</b><span>2 à 30 caractères</span></div>
+                <div class="inrow"><input type="text" id="setPseudo" maxlength="30"><button class="btn" id="setPseudoBtn">Enregistrer</button></div></div>
+              <div class="row"><div><b>Photo de profil</b><span>JPG ou PNG, recadrée en carré</span></div>
+                <div class="inrow"><button class="btn" id="avBtn2">Choisir une image</button><button class="btn" id="avReset">Retirer</button></div></div>
+              <p class="msg" id="profMsg" role="status"></p>
+            </div>
+            <div class="panel hidden" id="sSecurity">
+              <div><h2>Connexion et sécurité</h2><p class="sub">Comment tu te connectes à Atelier Coque.</p></div>
+              <div class="row"><div><b>E-mail</b><span>Adresse du compte</span></div><div id="secMail" style="padding-top:8px"></div></div>
+              <div class="row"><div><b>Méthodes de connexion</b></div><div id="secMethods" class="badges" style="padding-top:6px"></div></div>
+              <div class="row" id="secPassRow"><div><b>Mot de passe</b><span>8 caractères minimum</span></div>
+                <div class="inrow"><input type="password" id="setPass" autocomplete="new-password" placeholder="Nouveau mot de passe"><button class="btn" id="setPassBtn">Changer</button></div></div>
+              <p class="msg" id="secMsg" role="status"></p>
+            </div>
+            <div class="panel dangerzone hidden" id="sDanger">
+              <div><h2>Compte</h2><p class="sub">Se déconnecter de cet appareil, ou supprimer définitivement ton compte et tous tes modèles.</p></div>
+              <div class="inrow"><button class="btn" id="logoutBtn">Se déconnecter</button><button class="btn danger" id="delAccBtn">Supprimer mon compte</button></div>
+              <p class="msg" id="dangerMsg" role="status"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer><div class="wrap"><p>Atelier Coque · "PS5 Slim" (<a href="https://skfb.ly/oMrsZ" rel="nofollow">https://skfb.ly/oMrsZ</a>) by rtql8d is licensed under Creative Commons Attribution (<a href="http://creativecommons.org/licenses/by/4.0/" rel="nofollow">http://creativecommons.org/licenses/by/4.0/</a>)</p></div></footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script type="module">
+const SUPA_URL = "https://vpwjwowjremshsucfixr.supabase.co", SUPA_KEY = "sb_publishable_Iz1YiUqZrRlrG2VgzhXJvA_OGfRw57_";
+const $ = id => document.getElementById(id);
+const pageUrl = () => location.origin + location.pathname;
+let sb = null, user = null, models = [], toastT = 0;
+
+// thème partagé avec l'atelier
+$("themeBtn").onclick = () => { const t = document.documentElement.dataset.theme === "dark" ? "light" : "dark"; document.documentElement.dataset.theme = t; try { localStorage.setItem("atelier-theme", t); } catch (e) { } };
+function toast(m) { const t = $("toast"); t.textContent = m; t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 3200); }
+function msg(id, txt, kind) { const e = $(id); e.textContent = txt || ""; e.className = "msg" + (txt ? " " + (kind || "info") : ""); }
+const frErr = e => {
+  const m = (e && (e.message || e.error_description)) || String(e);
+  if (/Invalid login credentials/i.test(m)) return "E-mail ou mot de passe incorrect.";
+  if (/Email not confirmed/i.test(m)) return "Confirme d'abord ton e-mail avec le lien reçu.";
+  if (/already registered|already exists/i.test(m)) return "Un compte existe déjà avec cet e-mail.";
+  if (/Password should be at least/i.test(m)) return "Le mot de passe doit faire au moins 8 caractères.";
+  if (/rate limit|too many/i.test(m)) return "Trop d'essais d'un coup. Réessaie dans quelques minutes.";
+  if (/should be different/i.test(m)) return "Choisis un mot de passe différent de l'ancien.";
+  if (/Bucket not found/i.test(m)) return "Le stockage n'est pas encore prêt (script Supabase à lancer).";
+  if (/Failed to fetch|NetworkError/i.test(m)) return "Connexion au serveur impossible. Vérifie ta connexion Internet.";
+  return m;
+};
+const meta = u => (u && u.user_metadata) || {};
+const pseudoOf = u => { const m = meta(u); return m.pseudo || m.custom_claims?.global_name || m.full_name || m.name || (u && u.email ? u.email.split("@")[0] : "Moi"); };
+const avatarOf = u => { const m = meta(u); return m.avatar_custom === "none" ? null : (m.avatar_custom || m.avatar_url || null); };
+function setAv(el, u) { const url = avatarOf(u); el.style.backgroundImage = url ? `url("${url}")` : ""; el.textContent = url ? "" : pseudoOf(u).slice(0, 1).toUpperCase(); }
+const providers = u => [...new Set([...(u.identities || []).map(i => i.provider), u.app_metadata?.provider].filter(Boolean))];
+const fmtSize = n => n < 1024 * 1024 ? Math.max(1, Math.round(n / 1024)) + " Ko" : (n / 1048576).toFixed(n < 10485760 ? 1 : 0).replace(".", ",") + " Mo";
+const ago = d => {
+  const s = (Date.now() - new Date(d)) / 1000;
+  if (s < 60) return "à l'instant"; if (s < 3600) return "il y a " + Math.round(s / 60) + " min"; if (s < 86400) return "il y a " + Math.round(s / 3600) + " h";
+  if (s < 86400 * 7) return "il y a " + Math.round(s / 86400) + " j";
+  return new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+};
+const shortAgo = d => { const s = (Date.now() - new Date(d)) / 1000; return s < 3600 ? Math.max(1, Math.round(s / 60)) + " min" : s < 86400 ? Math.round(s / 3600) + " h" : s < 86400 * 60 ? Math.round(s / 86400) + " j" : Math.round(s / 86400 / 30) + " mois"; };
+
+function show(view) { ["loading", "authView", "homeView"].forEach(id => $(id).classList.toggle("hidden", id !== view)); $("userMenu").classList.toggle("hidden", !user); }
+
+// ---------- connexion ----------
+let mode = "in";
+function setMode(m) {
+  mode = m; $("tabIn").classList.toggle("on", m === "in"); $("tabUp").classList.toggle("on", m === "up");
+  $("pseudoF").classList.toggle("hidden", m !== "up"); $("forgotBtn").classList.toggle("hidden", m !== "in"); $("passHint").classList.toggle("hidden", m !== "up");
+  $("authSubmit").textContent = m === "in" ? "Se connecter" : "Créer mon compte"; $("authPass").autocomplete = m === "in" ? "current-password" : "new-password"; msg("authMsg");
+}
+$("tabIn").onclick = () => setMode("in"); $("tabUp").onclick = () => setMode("up");
+const back = () => new URLSearchParams(location.search).get("retour");
+function afterLogin() { const r = back(); if (r && /^atelier\.html/.test(r)) location.href = r; else enterHome(); }
+$("discordBtn").onclick = async () => {
+  const to = pageUrl() + (back() ? "?retour=" + encodeURIComponent(back()) : "");
+  const { error } = await sb.auth.signInWithOAuth({ provider: "discord", options: { redirectTo: to } });
+  if (error) msg("authMsg", frErr(error), "err");
+};
+$("authForm").onsubmit = async e => {
+  e.preventDefault();
+  const email = $("authEmail").value.trim(), password = $("authPass").value;
+  if (!/^\S+@\S+\.\S+$/.test(email)) return msg("authMsg", "Entre une adresse e-mail valide.", "err");
+  if (password.length < 8) return msg("authMsg", "Le mot de passe doit faire au moins 8 caractères.", "err");
+  $("authSubmit").disabled = true; msg("authMsg", mode === "in" ? "Connexion…" : "Création du compte…");
+  try {
+    if (mode === "in") { const { error } = await sb.auth.signInWithPassword({ email, password }); if (error) throw error; }
+    else {
+      const pseudo = $("authPseudo").value.trim();
+      if (pseudo.length < 2) throw new Error("Choisis un pseudo d'au moins 2 caractères.");
+      const { data, error } = await sb.auth.signUp({ email, password, options: { data: { pseudo }, emailRedirectTo: pageUrl() } });
+      if (error) throw error;
+      if (!data.session) { $("authPass").value = ""; return msg("authMsg", "Compte créé ! Clique sur le lien reçu par e-mail pour l'activer, puis connecte-toi.", "ok"); }
+    }
+    $("authPass").value = ""; msg("authMsg");
+  } catch (err) { msg("authMsg", frErr(err), "err"); }
+  finally { $("authSubmit").disabled = false; }
+};
+$("forgotBtn").onclick = async () => {
+  const email = $("authEmail").value.trim();
+  if (!/^\S+@\S+\.\S+$/.test(email)) return msg("authMsg", "Entre d'abord ton adresse e-mail ci-dessus.", "err");
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: pageUrl() });
+  msg("authMsg", error ? frErr(error) : "Si un compte existe pour cette adresse, un lien pour changer le mot de passe vient d'être envoyé.", error ? "err" : "ok");
+};
+$("resetForm").onsubmit = async e => {
+  e.preventDefault();
+  const password = $("resetPass").value; if (password.length < 8) return msg("authMsg", "Au moins 8 caractères.", "err");
+  const { error } = await sb.auth.updateUser({ password }); if (error) return msg("authMsg", frErr(error), "err");
+  $("resetPass").value = ""; msg("authMsg"); toast("Mot de passe changé."); recovering = false; enterHome();
+};
+
+// ---------- espace connecté ----------
+function renderUser() {
+  setAv($("topAv"), user); $("topName").textContent = pseudoOf(user); setAv($("pAv"), user);
+  $("pName").textContent = pseudoOf(user);
+  $("pSince").textContent = "Membre depuis " + new Date(user.created_at).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+  const pv = providers(user), b = $("pBadges"); b.innerHTML = "";
+  const badge = p => { const s = document.createElement("span"); s.className = "badge" + (p === "discord" ? " discord" : ""); s.textContent = p === "discord" ? "Connecté avec Discord" : "E-mail et mot de passe"; return s; };
+  pv.forEach(p => b.append(badge(p)));
+  $("secMethods").innerHTML = ""; pv.forEach(p => $("secMethods").append(badge(p)));
+  $("secMail").textContent = user.email || "—"; $("setPseudo").value = pseudoOf(user);
+  $("secPassRow").classList.toggle("hidden", !pv.includes("email"));
+  $("avReset").classList.toggle("hidden", !meta(user).avatar_custom || meta(user).avatar_custom === "none");
+}
+function renderStats() {
+  $("sCount").textContent = models.length; $("tCount").textContent = models.length;
+  $("sLast").textContent = models.length ? shortAgo(models.reduce((a, m) => m.updated_at > a ? m.updated_at : a, "")) : "–";
+  $("sSize").textContent = models.length ? fmtSize(models.reduce((a, m) => a + (m.size || 0), 0)) : "0 Ko";
+}
+async function loadModels() {
+  $("grid").innerHTML = '<div class="skel"></div><div class="skel"></div><div class="skel"></div>';
+  const { data, error } = await sb.from("models").select("id,name,thumb,updated_at,created_at,size").order("updated_at", { ascending: false });
+  if (error) { $("grid").innerHTML = ""; const d = document.createElement("div"); d.className = "empty"; d.textContent = "Impossible de charger tes modèles : " + frErr(error); $("grid").append(d); return; }
+  models = data; renderStats(); renderGrid();
+}
+function closeMenus(except) { document.querySelectorAll(".card .menu").forEach(m => { if (m !== except) m.classList.add("hidden"); }); }
+document.addEventListener("click", e => { if (!e.target.closest(".card .more, .card .menu")) closeMenus(); if (!e.target.closest(".usermenu")) { $("userDrop").classList.add("hidden"); $("userBtn").setAttribute("aria-expanded", "false"); } });
+function renderGrid() {
+  const g = $("grid"), q = $("search").value.trim().toLowerCase(), sort = $("sort").value;
+  let list = models.filter(m => m.name.toLowerCase().includes(q));
+  if (sort === "old") list = list.slice().sort((a, b) => a.updated_at.localeCompare(b.updated_at));
+  if (sort === "name") list = list.slice().sort((a, b) => a.name.localeCompare(b.name, "fr"));
+  g.innerHTML = "";
+  if (!models.length) {
+    g.innerHTML = '<div class="empty"><h3>Aucun modèle pour l\'instant</h3><p>Dans l\'atelier, place ton image puis clique sur ton avatar → « Enregistrer dans mon compte ».</p><a class="btn main" href="atelier.html">Créer mon premier modèle</a></div>';
+    return;
+  }
+  if (!list.length) { g.innerHTML = '<div class="empty">Aucun modèle ne correspond à ta recherche.</div>'; return; }
+  for (const m of list) {
+    const c = document.createElement("article"); c.className = "card";
+    const href = "atelier.html?modele=" + encodeURIComponent(m.id);
+    c.innerHTML = `<a class="th" href="${href}" aria-label="Ouvrir dans l'atelier"><img alt="" loading="lazy"></a>
+      <div class="body"><div class="name"></div><div class="meta"></div>
+        <button class="more" aria-label="Plus d'actions" aria-haspopup="menu">⋯</button>
+        <div class="menu hidden" role="menu">
+          <button data-a="rename">Renommer</button><button data-a="dup">Dupliquer</button><button data-a="dl">Télécharger le projet</button><hr><button data-a="del" style="color:var(--err)">Supprimer</button>
+        </div>
+        <a class="btn sm open" href="${href}">Ouvrir dans l'atelier</a></div>`;
+    if (m.thumb) c.querySelector("img").src = m.thumb;
+    c.querySelector(".name").textContent = m.name; c.querySelector(".name").title = m.name;
+    c.querySelector(".meta").textContent = "Modifié " + ago(m.updated_at) + (m.size ? " · " + fmtSize(m.size) : "");
+    const menu = c.querySelector(".menu");
+    c.querySelector(".more").onclick = e => { e.stopPropagation(); closeMenus(menu); menu.classList.toggle("hidden"); };
+    menu.onclick = async e => {
+      const a = e.target.dataset.a; if (!a) return;
+      if (a === "del" && !e.target.classList.contains("armed")) { e.target.classList.add("armed"); e.target.textContent = "Confirmer la suppression"; return; }
+      menu.classList.add("hidden");
+      if (a === "rename") rename(m, c); else if (a === "dup") duplicate(m); else if (a === "dl") download(m); else if (a === "del") remove(m);
+    };
+    g.append(c);
+  }
+  const n = document.createElement("a"); n.className = "newcard"; n.href = "atelier.html"; n.innerHTML = "<span>+</span>Nouveau modèle"; g.append(n);
+}
+$("search").oninput = renderGrid; $("sort").onchange = renderGrid;
+function rename(m, card) {
+  const el = card.querySelector(".name"), inp = document.createElement("input"); inp.type = "text"; inp.value = m.name; inp.maxLength = 80;
+  el.replaceWith(inp); inp.focus(); inp.select();
+  let done = false;
+  const finish = async ok => {
+    if (done) return; done = true;
+    const name = inp.value.trim();
+    if (ok && name && name !== m.name) {
+      const { error } = await sb.from("models").update({ name }).eq("id", m.id);
+      if (error) toast("Renommage impossible : " + frErr(error)); else { m.name = name; toast("Modèle renommé."); }
+    }
+    renderGrid();
+  };
+  inp.onkeydown = e => { if (e.key === "Enter") finish(true); else if (e.key === "Escape") finish(false); };
+  inp.onblur = () => finish(true);
+}
+async function duplicate(m) {
+  try {
+    const name = (m.name + " (copie)").slice(0, 80);
+    const { data, error } = await sb.from("models").insert({ name, thumb: m.thumb, size: m.size }).select("id,name,thumb,updated_at,created_at,size").single();
+    if (error) throw error;
+    const cp = await sb.storage.from("models").copy(user.id + "/" + m.id + ".json", user.id + "/" + data.id + ".json");
+    if (cp.error) { await sb.from("models").delete().eq("id", data.id); throw cp.error; }
+    models.unshift(data); renderStats(); renderGrid(); toast("Copie créée : " + name);
+  } catch (e) { toast("Duplication impossible : " + frErr(e)); }
+}
+async function download(m) {
+  const { data, error } = await sb.storage.from("models").download(user.id + "/" + m.id + ".json");
+  if (error) return toast("Téléchargement impossible : " + frErr(error));
+  const a = document.createElement("a"); a.href = URL.createObjectURL(data);
+  a.download = m.name.replace(/[\\/:*?"<>|]+/g, "-") + ".json"; document.body.append(a); a.click(); a.remove();
+}
+async function remove(m) {
+  const r = await sb.storage.from("models").remove([user.id + "/" + m.id + ".json"]);
+  const { error } = await sb.from("models").delete().eq("id", m.id);
+  if (error || r.error) return toast("Suppression impossible : " + frErr(error || r.error));
+  models = models.filter(x => x.id !== m.id); renderStats(); renderGrid(); toast("« " + m.name + " » supprimé.");
+}
+
+// onglets
+function tab(t) {
+  $("tModels").classList.toggle("on", t === "models"); $("tSettings").classList.toggle("on", t === "settings");
+  $("modelsPane").classList.toggle("hidden", t !== "models"); $("settingsPane").classList.toggle("hidden", t !== "settings");
+  history.replaceState(null, "", t === "settings" ? "#parametres" : pageUrl() + location.search);
+}
+$("tModels").onclick = () => tab("models"); $("tSettings").onclick = () => tab("settings");
+document.querySelectorAll(".settings .side button").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".settings .side button").forEach(x => x.classList.toggle("on", x === b));
+  ["sProfile", "sSecurity", "sDanger"].forEach(id => $(id).classList.toggle("hidden", id !== b.dataset.s));
+});
+$("userBtn").onclick = () => { const d = $("userDrop"); d.classList.toggle("hidden"); $("userBtn").setAttribute("aria-expanded", String(!d.classList.contains("hidden"))); };
+document.querySelector('[data-go="settings"]').onclick = () => { $("userDrop").classList.add("hidden"); if (user) tab("settings"); };
+
+// paramètres
+$("setPseudoBtn").onclick = async () => {
+  const pseudo = $("setPseudo").value.trim(); if (pseudo.length < 2) return msg("profMsg", "Au moins 2 caractères.", "err");
+  const { data, error } = await sb.auth.updateUser({ data: { pseudo } }); if (error) return msg("profMsg", frErr(error), "err");
+  user = data.user; renderUser(); msg("profMsg", "Pseudo enregistré.", "ok");
+};
+$("avBtn").onclick = $("avBtn2").onclick = () => $("avIn").click();
+$("avIn").onchange = async () => {
+  const f = $("avIn").files[0]; $("avIn").value = ""; if (!f) return;
+  try {
+    const bmp = await createImageBitmap(f), s = Math.min(bmp.width, bmp.height), c = document.createElement("canvas"); c.width = c.height = 256;
+    c.getContext("2d").drawImage(bmp, (bmp.width - s) / 2, (bmp.height - s) / 2, s, s, 0, 0, 256, 256);
+    const blob = await new Promise(r => c.toBlob(r, "image/jpeg", 0.88));
+    const path = user.id + "/avatar.jpg";
+    const up = await sb.storage.from("avatars").upload(path, blob, { upsert: true, contentType: "image/jpeg" }); if (up.error) throw up.error;
+    const url = sb.storage.from("avatars").getPublicUrl(path).data.publicUrl + "?v=" + Date.now();
+    const { data, error } = await sb.auth.updateUser({ data: { avatar_custom: url } }); if (error) throw error;
+    user = data.user; renderUser(); toast("Photo de profil mise à jour."); msg("profMsg");
+  } catch (e) { msg("profMsg", "Impossible de changer la photo : " + frErr(e), "err"); }
+};
+$("avReset").onclick = async () => {
+  const { data, error } = await sb.auth.updateUser({ data: { avatar_custom: null } }); if (error) return msg("profMsg", frErr(error), "err");
+  await sb.storage.from("avatars").remove([user.id + "/avatar.jpg"]); user = data.user; renderUser(); toast("Photo retirée.");
+};
+$("setPassBtn").onclick = async () => {
+  const password = $("setPass").value; if (password.length < 8) return msg("secMsg", "Le mot de passe doit faire au moins 8 caractères.", "err");
+  const { error } = await sb.auth.updateUser({ password }); if (error) return msg("secMsg", frErr(error), "err");
+  $("setPass").value = ""; msg("secMsg", "Mot de passe changé.", "ok");
+};
+const logout = async () => { await sb.auth.signOut(); toast("Déconnecté."); };
+$("logoutBtn").onclick = logout; $("topLogout").onclick = logout;
+$("delAccBtn").onclick = async () => {
+  const b = $("delAccBtn");
+  if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = "Confirmer : tout supprimer"; msg("dangerMsg", "Ton compte et tes " + models.length + " modèle(s) seront supprimés définitivement. Clique à nouveau pour confirmer.", "err"); setTimeout(() => { b.classList.remove("armed"); b.textContent = "Supprimer mon compte"; }, 8000); return; }
+  b.disabled = true;
+  try {
+    const { data: files } = await sb.storage.from("models").list(user.id, { limit: 1000 });
+    if (files && files.length) await sb.storage.from("models").remove(files.map(f => user.id + "/" + f.name));
+    await sb.storage.from("avatars").remove([user.id + "/avatar.jpg"]);
+    const { error } = await sb.rpc("delete_my_account"); if (error) throw error;
+    await sb.auth.signOut(); toast("Compte supprimé.");
+  } catch (e) { msg("dangerMsg", "Suppression impossible : " + frErr(e), "err"); }
+  finally { b.disabled = false; b.classList.remove("armed"); b.textContent = "Supprimer mon compte"; }
+};
+
+let recovering = false, homeLoaded = false;
+function enterHome() {
+  if (recovering) return;
+  show("homeView"); renderUser();
+  if (!homeLoaded) { homeLoaded = true; loadModels(); }
+  if (location.hash === "#parametres") tab("settings");
+}
+function enterAuth() { homeLoaded = false; models = []; show("authView"); }
+
+(async () => {
+  if (!SUPA_URL.startsWith("https://")) { $("loading").textContent = "Les comptes ne sont pas disponibles sur cette version du site."; return; }
+  let createClient;
+  try { ({ createClient } = await import("https://esm.sh/@supabase/supabase-js@2.119.0")); }
+  catch (e) { $("loading").textContent = "Les comptes ne sont pas disponibles ici. Ouvre le site sur xezy-b2.github.io/PS5."; return; }
+  sb = createClient(SUPA_URL, SUPA_KEY, { auth: { persistSession: true, detectSessionInUrl: true, flowType: "pkce" } });
+  const q = new URLSearchParams(location.search);
+  if (q.get("error_description")) { show("authView"); msg("authMsg", frErr(q.get("error_description")), "err"); }
+  sb.auth.onAuthStateChange((ev, session) => {
+    const was = user && user.id; user = session ? session.user : null;
+    if (/[?&]code=/.test(location.search)) history.replaceState(null, "", pageUrl() + (back() ? "?retour=" + encodeURIComponent(back()) : ""));
+    if (ev === "PASSWORD_RECOVERY") { recovering = true; show("authView"); $("authMain").classList.add("hidden"); $("authReset").classList.remove("hidden"); return; }
+    if (!user) { $("userMenu").classList.add("hidden"); if (!q.get("error_description")) enterAuth(); return; }
+    if (ev === "SIGNED_IN" && !was && back()) return afterLogin();
+    setTimeout(enterHome, 0);
+  });
+})();
+</script>
+</body>
+</html>
