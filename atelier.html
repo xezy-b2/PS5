@@ -40,10 +40,12 @@
   .app.nav-closed .chev{transform:rotate(180deg);transform-origin:14.5px 12px}
   .iconbtn2{width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--line2);border-radius:9px;background:var(--panel);color:var(--ink);cursor:pointer;padding:0;flex:none}
   .iconbtn2:hover{background:var(--hover)}
-  header.top{grid-column:1/-1;display:flex;align-items:center;gap:20px;padding:0 18px 0 20px;background:var(--panel);border-bottom:1px solid var(--line);position:relative;z-index:3}
+  header.top{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:0 18px 0 20px;background:var(--panel);border-bottom:1px solid var(--line);position:relative;z-index:3}
   .brand{display:flex;align-items:center;gap:10px;min-width:300px}
   .brand .logo{flex:none;border-radius:8px}
   .brand .word,.brand .model{white-space:nowrap}
+  header.top > *:not(.spacer):not(.progress){flex:none}
+  @media (max-width:1580px){.brand{min-width:0!important}.brand .model{display:none}}
   .brand .word{font-weight:800;font-size:19px;letter-spacing:-.01em;font-variation-settings:"wdth" 125}
   .brand .model{font-size:13px;color:var(--muted);font-weight:500}
   .tabs{display:flex;gap:2px;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:3px}
@@ -167,8 +169,23 @@
   .sfcredit{margin:0;padding:8px 16px;font-size:12px;color:var(--stage-ink)}
   .sfcredit a{color:inherit;font-weight:600}
   .overlay a{color:inherit;font-weight:600}
-  .tools{display:flex;align-items:center;gap:6px}
-  .tools .sep{width:1px;height:22px;background:var(--line2);margin:0 4px}
+  .tools{display:flex;align-items:center;gap:10px}
+  .grp{display:inline-flex;border:1px solid var(--line2);border-radius:10px;background:var(--panel);overflow:hidden;flex:none}
+  .grp .iconbtn2{border:0;border-radius:0;width:36px;height:34px;background:none}
+  .grp .iconbtn2 + .iconbtn2{border-left:1px solid var(--line)}
+  .grp .iconbtn2:hover:not(:disabled){background:var(--hover)}
+  .ghostbtn{border:0;background:none;color:var(--muted);font-weight:600;font-size:13px;padding:8px 10px;border-radius:9px;cursor:pointer;white-space:nowrap}
+  .ghostbtn:hover{background:var(--hover);color:var(--ink)}
+  .vsep{width:1px;height:24px;background:var(--line2);flex:none}
+  .theme.ghosticon{border-color:transparent;background:none;color:var(--muted)}
+  .theme.ghosticon:hover{background:var(--hover);color:var(--ink)}
+  .accbtn{display:flex;align-items:center;gap:8px;border:1px solid transparent;background:none;border-radius:999px;padding:2px 8px 2px 2px;cursor:pointer;color:var(--ink);font-weight:600;font-size:13px;white-space:nowrap;flex:none}
+  .accbtn:hover,.accbtn[aria-expanded="true"]{background:var(--hover);border-color:var(--line)}
+  .accbtn .av{width:32px;height:32px;font-size:13px;box-shadow:0 0 0 2px var(--panel),0 0 0 3.5px var(--line2)}
+  .accbtn .chev{color:var(--muted)}
+  .accbtn.out{border-color:var(--line2);padding:7px 13px;border-radius:9px}
+  .accbtn.out .av,.accbtn.out .chev{display:none}
+  .av img{width:100%;height:100%;object-fit:cover;display:block}
   .iconbtn2:disabled{opacity:.35;cursor:not-allowed}
   .resume{position:absolute;left:50%;top:16px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:var(--panel);color:var(--ink);border:1px solid var(--line2);border-radius:10px;padding:8px 8px 8px 14px;box-shadow:0 10px 30px #0003;font-size:13px;z-index:3;max-width:calc(100% - 32px)}
   .resume .btn{padding:6px 11px}
@@ -181,8 +198,7 @@
   .excard:hover{border-color:var(--ink)}
   .excard b{font-size:13px} .excard small{font-size:11.5px;color:var(--muted);line-height:1.35}
   .exthumb{width:100%;height:auto;border-radius:6px;margin-bottom:6px;display:block}
-  .btn.acc{display:flex;align-items:center;gap:7px;padding:5px 11px 5px 6px;white-space:nowrap}
-  .av{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:700;background-size:cover;background-position:center;flex:none}
+  .av{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:700;flex:none;overflow:hidden}
   .av:empty{background:var(--line2)}
   .av.big{width:42px;height:42px;font-size:18px}
   .accsheet{width:min(440px,100%)}
@@ -227,8 +243,8 @@
   .toast.show{opacity:1;transform:translate(-50%,0)}
   @media (max-width:1180px){.stats{display:none}}
   @media (max-width:1420px){.stats{display:none}.brand{min-width:0}.brand .model{display:none}}
-  @media (max-width:1500px){#accLbl{display:none}.btn.acc{padding:5px}}
-  @media (max-width:1280px){.brand .model{display:none}#galleryBtn{display:none}#accLbl{display:none}.btn.acc{padding:5px}}
+  @media (max-width:1500px){.accbtn:not(.out) .lbl{display:none}}
+  @media (max-width:1280px){.brand .model{display:none}#galleryBtn{display:none}.vsep{display:none}}
   header.top .btn,.tabs button{white-space:nowrap}
   .conbar{position:absolute;right:16px;top:16px;z-index:2}
   .conbar .btn{padding:6px 11px;font-size:12.5px}
@@ -268,23 +284,21 @@
   <div class="spacer"></div>
   <div class="stats" id="stats"></div>
   <div class="tools">
-    <button class="iconbtn2" id="undoBtn" title="Annuler (Cmd+Z)" aria-label="Annuler" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
-    <button class="iconbtn2" id="redoBtn" title="Rétablir (Cmd+Maj+Z)" aria-label="Rétablir" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
-    <span class="sep"></span>
-    <button class="iconbtn2" id="openBtn" title="Ouvrir un projet" aria-label="Ouvrir un projet"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
-    <button class="iconbtn2" id="saveBtn" title="Enregistrer le projet (Cmd+S)" aria-label="Enregistrer le projet"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 4h11l3 3v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg></button>
-    <button class="btn" id="galleryBtn">Exemples</button>
-    <button class="btn acc hidden" id="accBtn" aria-haspopup="dialog"><span class="av" id="accAv"></span><span id="accLbl">Se connecter</span></button>
+    <div class="grp" role="group" aria-label="Historique"><button class="iconbtn2" id="undoBtn" title="Annuler (Cmd+Z)" aria-label="Annuler" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button><button class="iconbtn2" id="redoBtn" title="Rétablir (Cmd+Maj+Z)" aria-label="Rétablir" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button></div>
+    <div class="grp" role="group" aria-label="Projet"><button class="iconbtn2" id="openBtn" title="Ouvrir un projet" aria-label="Ouvrir un projet"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button><button class="iconbtn2" id="saveBtn" title="Enregistrer le projet (Cmd+S)" aria-label="Enregistrer le projet"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 4h11l3 3v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg></button></div>
+    <button class="ghostbtn" id="galleryBtn">Exemples</button>
     <input type="file" id="projIn" accept=".json,application/json" class="hidden">
   </div>
-  <button class="theme" id="themeBtn" aria-label="Changer de thème">
-    <svg class="sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
-    <svg class="moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.8 6.8 0 0 0 10.7 10.7z"/></svg>
-  </button>
   <div class="actions">
     <button class="btn primary" id="gen" disabled>Générer la 3D</button>
     <button class="btn accent" id="dl" disabled>Télécharger le .3mf</button>
   </div>
+  <span class="vsep" aria-hidden="true"></span>
+  <button class="theme ghosticon" id="themeBtn" aria-label="Changer de thème">
+    <svg class="sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+    <svg class="moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.8 6.8 0 0 0 10.7 10.7z"/></svg>
+  </button>
+  <button class="accbtn hidden" id="accBtn" aria-haspopup="menu"><span class="av" id="accAv"></span><span class="lbl" id="accLbl">Se connecter</span><svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
   <div class="progress" id="prog"><div></div></div>
 </header>
 
@@ -2037,7 +2051,15 @@ const accOn = () => SUPA_URL.startsWith("https://") && SUPA_KEY.length > 20;
 const umeta = u => (u && u.user_metadata) || {};
 const pseudoOf = u => { const m = umeta(u); return m.pseudo || m.custom_claims?.global_name || m.full_name || m.name || (u && u.email ? u.email.split("@")[0] : "Moi"); };
 const avatarOf = u => { const m = umeta(u); return m.avatar_custom === "none" ? null : (m.avatar_custom || m.avatar_url || null); };
-function setAv(el, u) { const url = u && avatarOf(u); el.style.backgroundImage = url ? `url("${url}")` : ""; el.textContent = u && !url ? pseudoOf(u).slice(0, 1).toUpperCase() : ""; }
+// avatar : la photo si elle se charge, sinon l'initiale du pseudo
+function setAv(el, u) {
+  const url = u && avatarOf(u), ini = u ? pseudoOf(u).slice(0, 1).toUpperCase() : "";
+  el.textContent = ini;
+  if (!url) return;
+  const im = new Image(); im.alt = ""; im.referrerPolicy = "no-referrer";
+  im.onload = () => { el.textContent = ""; el.append(im); };
+  im.src = url;
+}
 function accMsg(id, txt, kind) { const e = $(id); e.textContent = txt || ""; e.className = "accmsg" + (kind ? " " + kind : ""); }
 const frErr = e => {
   const m = (e && (e.message || e.error_description)) || String(e);
@@ -2059,12 +2081,14 @@ function openSave() {
 function closeSave() { $("acc").classList.add("hidden"); }
 function openDrop() {
   const r = $("accBtn").getBoundingClientRect(), d = $("accDrop");
+  $("accBtn").setAttribute("aria-expanded", "true");
   d.classList.remove("hidden"); d.style.top = (r.bottom + 8) + "px"; d.style.left = Math.max(8, r.right - d.offsetWidth) + "px";
 }
-function closeDrop() { $("accDrop").classList.add("hidden"); }
+function closeDrop() { $("accDrop").classList.add("hidden"); $("accBtn").setAttribute("aria-expanded", "false"); }
 function renderAccUser() {
   const u = ACC.user;
   $("accLbl").textContent = u ? pseudoOf(u) : "Se connecter"; setAv($("accAv"), u);
+  $("accBtn").classList.toggle("out", !u); $("accBtn").title = u ? "Mon compte" : "";
   if (u) { setAv($("dAv"), u); $("dName").textContent = pseudoOf(u); $("dMail").textContent = u.email || ""; }
 }
 function thumbOfWork() {

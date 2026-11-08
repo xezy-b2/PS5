@@ -59,6 +59,7 @@
   .btn.sm{padding:6px 11px;font-size:13px}
 
   .av{width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:700;font-size:14px;background-size:cover;background-position:center;flex:none;overflow:hidden}
+  .av img{width:100%;height:100%;object-fit:cover;display:block}
   .usermenu{position:relative}
   .userbtn{display:flex;align-items:center;gap:9px;border:1px solid var(--line2);background:var(--panel);border-radius:999px;padding:3px 12px 3px 3px;cursor:pointer;font-weight:600;font-size:14px}
   .userbtn .av{width:30px;height:30px;font-size:13px}
@@ -343,7 +344,13 @@ const frErr = e => {
 const meta = u => (u && u.user_metadata) || {};
 const pseudoOf = u => { const m = meta(u); return m.pseudo || m.custom_claims?.global_name || m.full_name || m.name || (u && u.email ? u.email.split("@")[0] : "Moi"); };
 const avatarOf = u => { const m = meta(u); return m.avatar_custom === "none" ? null : (m.avatar_custom || m.avatar_url || null); };
-function setAv(el, u) { const url = avatarOf(u); el.style.backgroundImage = url ? `url("${url}")` : ""; el.textContent = url ? "" : pseudoOf(u).slice(0, 1).toUpperCase(); }
+function setAv(el, u) {
+  const url = avatarOf(u); el.textContent = pseudoOf(u).slice(0, 1).toUpperCase();
+  if (!url) return;
+  const im = new Image(); im.alt = ""; im.referrerPolicy = "no-referrer";
+  im.onload = () => { el.textContent = ""; el.append(im); };
+  im.src = url;
+}
 const providers = u => [...new Set([...(u.identities || []).map(i => i.provider), u.app_metadata?.provider].filter(Boolean))];
 const fmtSize = n => n < 1024 * 1024 ? Math.max(1, Math.round(n / 1024)) + " Ko" : (n / 1048576).toFixed(n < 10485760 ? 1 : 0).replace(".", ",") + " Mo";
 const ago = d => {
