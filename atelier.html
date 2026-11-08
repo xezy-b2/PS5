@@ -1657,7 +1657,7 @@ function buildCustomOverlay() {
   customOverlay = new THREE.Group();
   consoleRoot.updateMatrixWorld(true);
   const inv = new THREE.Matrix4().copy(consoleRoot.matrixWorld).invert();
-  const sides = { logo: { pos: [], uv: [] }, autre: { pos: [], uv: [] } };
+  const groups = {};
   const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), n = new THREE.Vector3();
   customModel.traverse(o => {
     if (!o.isMesh || !o.visible || o.userData.noDesign) return;
@@ -1671,21 +1671,39 @@ function buildCustomOverlay() {
       if (Math.abs(n.x) < 0.45) continue;
       const cx = (a.x + b.x + c.x) / 3, side = cx > 0 ? "logo" : "autre";
       n.x = Math.sign(cx);
-      const [FW, FH] = SIDE_LAYOUT[side].size, S2 = sides[side];
+      const key = side + "|" + (o.userData.coverPart || ""), [FW, FH] = SIDE_LAYOUT[side].size;
+      const S2 = groups[key] || (groups[key] = { pos: [], uv: [] });
       for (const v of [a, b, c]) {
         const fx = side === "logo" ? -v.z : v.z, fy = v.y - CH / 2;
         S2.pos.push(v.x + Math.sign(n.x) * 1.2, v.y, v.z); S2.uv.push(fx / FW + 0.5, fy / FH + 0.5);
       }
     }
   });
-  for (const side of ["logo", "autre"]) {
+  for (const [key, grp] of Object.entries(groups)) {
+    const [side, part] = key.split("|");
     const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.Float32BufferAttribute(sides[side].pos, 3));
-    g.setAttribute("uv", new THREE.Float32BufferAttribute(sides[side].uv, 2)); g.computeVertexNormals();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(grp.pos, 3));
+    g.setAttribute("uv", new THREE.Float32BufferAttribute(grp.uv, 2)); g.computeVertexNormals();
     const mat = new THREE.MeshStandardMaterial({ transparent: true, alphaTest: 0.5, roughness: 0.45, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -8, side: THREE.DoubleSide });
-    const mesh = new THREE.Mesh(g, mat); mesh.userData.side = side; customOverlay.add(mesh);
+    const mesh = new THREE.Mesh(g, mat); mesh.userData.side = side; mesh.userData.part = part; customOverlay.add(mesh);
   }
   consoleRoot.add(customOverlay);
+}
+// Design à afficher sur une coque du modèle réaliste : celui en cours d'édition s'il la concerne,
+// sinon celui enregistré à la dernière génération de cette coque (ou de tout le côté).
+function designFor(side, part) {
+  const L = SIDE_LAYOUT[side], live = S.src === "side:" + side || L.parts.some(p => p.id === S.src);
+  if (part) {
+    const id = L.parts[part === "top" ? 0 : 1].id;
+    if (S.src === "side:" + side || S.src === id) { const cv = sideDesignCanvas(side); if (cv) return cv; }
+    return (S.results[id] && S.results[id].design) || null;
+  }
+  // modèle importé (coques non identifiées) : on superpose les coques générées, puis le design en cours
+  const layers = L.parts.filter(p => p.id !== S.src && S.results[p.id] && S.results[p.id].design).map(p => S.results[p.id].design);
+  const cur = live ? sideDesignCanvas(side) : null; if (cur) layers.push(cur);
+  if (layers.length <= 1) return layers[0] || null;
+  const c = document.createElement("canvas"); c.width = layers[0].width; c.height = layers[0].height;
+  const g = c.getContext("2d"); layers.forEach(l => g.drawImage(l, 0, 0)); return c;
 }
 function updateCustomDesign() {
   if (!customModel || !isAsis()) { if (customOverlay) customOverlay.visible = false; return; }
@@ -1694,7 +1712,7 @@ function updateCustomDesign() {
   }
   customOverlay.visible = true;
   for (const mesh of customOverlay.children) {
-    const cv = sideDesignCanvas(mesh.userData.side);
+    const cv = designFor(mesh.userData.side, mesh.userData.part);
     if (mesh.material.map) { mesh.material.map.dispose(); mesh.material.map = null; }
     mesh.visible = !!cv;
     if (cv) { const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; mesh.material.map = t; mesh.material.needsUpdate = true; }
@@ -1737,6 +1755,8 @@ $("conModel").onchange = () => setConChoice($("conModel").value);
       if (!o.isMesh) return;
       const n = o.material.name || "";
       if (/Steel|Rubber/.test(n)) o.userData.noDesign = true;        // socle et patins : pas de design dessus
+      if (/Glossy_\(White\)/.test(n)) o.userData.coverPart = "top";      // coque du haut
+      if (/Matte_\(White\)/.test(n)) o.userData.coverPart = "bottom";    // coque du bas
       if (/White/.test(n)) o.material = new THREE.MeshPhysicalMaterial({ color: 0xeef0f3, roughness: /Matte/.test(n) ? 0.55 : 0.3, clearcoat: /Glossy/.test(n) ? 0.8 : 0.2 });
       else if (/Gray|Blue/.test(n)) o.material = new THREE.MeshPhysicalMaterial({ color: 0x0b0c0e, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.15 });
       else if (/Acrylic/.test(n)) o.material = new THREE.MeshBasicMaterial({ color: 0x4f7bff });
@@ -1931,7 +1951,10 @@ function makeSampler(piece, fm) {
 }
 function storeResult(g, fm) {
   if (!PART_NAMES[g.piece.id]) return;
-  S.results[g.piece.id] = { mesh: g.mesh, ext: g.ext, cols: fm.cols, spin: g.piece.spin };
+  const side = Object.keys(SIDE_LAYOUT).find(s => SIDE_LAYOUT[s].parts.some(p => p.id === g.piece.id));
+  // on garde aussi le design de cette coque, pour l'afficher sur la console réaliste quand tu passes à l'autre coque
+  S.results[g.piece.id] = { mesh: g.mesh, ext: g.ext, cols: fm.cols, spin: g.piece.spin, design: side ? sideDesignCanvas(side) : null };
+  if (customOverlay) customOverlay.userData.dirty = true;
   conDirty = true;
 }
 const HUGE = { cx: 0, cy: 0, w: 1e7, h: 1e7, rot: 0 };
