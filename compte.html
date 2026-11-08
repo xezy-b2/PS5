@@ -175,7 +175,7 @@
     .panel .row{grid-template-columns:1fr;gap:10px}
     .bar nav{display:none}
   }
-  @media (max-width:560px){ .wrap{padding:0 18px} .userbtn .nm{display:none} .userbtn{padding:3px} .stat{min-width:0;padding:4px 14px} }
+  @media (max-width:560px){ .authside{display:none} .authwrap{margin-top:0} .authcard{padding:24px 20px} .wrap{padding:0 18px} .userbtn .nm{display:none} .userbtn{padding:3px} .stat{min-width:0;padding:4px 14px} }
 </style>
 </head>
 <body>
@@ -240,6 +240,13 @@
               <label class="field">Nouveau mot de passe<input type="password" id="resetPass" autocomplete="new-password"><small>8 caractères minimum.</small></label>
               <button class="btn main" type="submit">Enregistrer le mot de passe</button>
             </form>
+          </div>
+          <div id="authConfirm" class="hidden">
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <h2>Active ton compte</h2>
+              <p class="sub">Un dernier clic pour confirmer ton adresse e-mail et entrer dans ton espace.</p>
+              <button class="btn main" id="confirmBtn">Activer mon compte</button>
+            </div>
           </div>
           <p class="msg" id="authMsg" role="status"></p>
         </div>
@@ -339,6 +346,8 @@ const frErr = e => {
   if (/should be different/i.test(m)) return "Choisis un mot de passe différent de l'ancien.";
   if (/Bucket not found/i.test(m)) return "Le stockage n'est pas encore prêt (script Supabase à lancer).";
   if (/Failed to fetch|NetworkError/i.test(m)) return "Connexion au serveur impossible. Vérifie ta connexion Internet.";
+  if (/link is invalid|has expired|otp_expired|Token has expired|invalid.*token/i.test(m)) return "Ce lien n'est plus valable (déjà utilisé ou expiré). Redemande-en un nouveau ci-dessous, et ouvre-le dès réception.";
+  if (/code verifier|code_verifier|both auth code and code verifier/i.test(m)) return "Ce lien a été ouvert dans un autre navigateur que celui où tu l'as demandé. Redemande-en un nouveau ci-dessous.";
   return m;
 };
 const meta = u => (u && u.user_metadata) || {};
@@ -406,6 +415,13 @@ $("forgotBtn").onclick = async () => {
 $("resetForm").onsubmit = async e => {
   e.preventDefault();
   const password = $("resetPass").value; if (password.length < 8) return msg("authMsg", "Au moins 8 caractères.", "err");
+  msg("authMsg", "Enregistrement…");
+  if (TOKEN.hash && TOKEN.type === "recovery") {
+    // le lien de l'e-mail n'est utilisé qu'ici, au moment où tu valides : il marche sur n'importe quel appareil
+    const v = await sb.auth.verifyOtp({ token_hash: TOKEN.hash, type: "recovery" });
+    if (v.error) { backToLogin(); return msg("authMsg", frErr(v.error), "err"); }
+    TOKEN.hash = null;
+  }
   const { error } = await sb.auth.updateUser({ password }); if (error) return msg("authMsg", frErr(error), "err");
   $("resetPass").value = ""; msg("authMsg"); toast("Mot de passe changé."); recovering = false; enterHome();
 };
@@ -572,6 +588,17 @@ $("delAccBtn").onclick = async () => {
 };
 
 let recovering = false, homeLoaded = false;
+// liens des e-mails (réinitialisation, confirmation) : ?token_hash=…&type=recovery|email
+const TOKEN = (() => { const q = new URLSearchParams(location.search); return { hash: q.get("token_hash"), type: q.get("type") }; })();
+function backToLogin() { recovering = false; $("authReset").classList.add("hidden"); $("authConfirm").classList.add("hidden"); $("authMain").classList.remove("hidden"); setMode("in"); show("authView"); }
+function showRecovery() { recovering = true; show("authView"); $("authMain").classList.add("hidden"); $("authConfirm").classList.add("hidden"); $("authReset").classList.remove("hidden"); }
+$("confirmBtn").onclick = async () => {
+  $("confirmBtn").disabled = true; msg("authMsg", "Activation…");
+  const { error } = await sb.auth.verifyOtp({ token_hash: TOKEN.hash, type: TOKEN.type === "signup" ? "signup" : "email" });
+  $("confirmBtn").disabled = false; TOKEN.hash = null; recovering = false;
+  if (error) { backToLogin(); return msg("authMsg", frErr(error), "err"); }
+  msg("authMsg"); toast("Compte activé, bienvenue !"); enterHome();
+};
 function enterHome() {
   if (recovering) return;
   show("homeView"); renderUser();
@@ -586,13 +613,19 @@ function enterAuth() { homeLoaded = false; models = []; show("authView"); }
   try { ({ createClient } = await import("https://esm.sh/@supabase/supabase-js@2.119.0")); }
   catch (e) { $("loading").textContent = "Les comptes ne sont pas disponibles ici. Ouvre le site sur xezy-b2.github.io/PS5."; return; }
   sb = createClient(SUPA_URL, SUPA_KEY, { auth: { persistSession: true, detectSessionInUrl: true, flowType: "pkce" } });
-  const q = new URLSearchParams(location.search);
-  if (q.get("error_description")) { show("authView"); msg("authMsg", frErr(q.get("error_description")), "err"); }
+  const q = new URLSearchParams(location.search), hq = new URLSearchParams(location.hash.slice(1));
+  const linkErr = q.get("error_description") || hq.get("error_description");
+  if (linkErr) { show("authView"); msg("authMsg", frErr(linkErr), "err"); history.replaceState(null, "", pageUrl()); }
+  if (TOKEN.hash) {
+    history.replaceState(null, "", pageUrl());
+    if (TOKEN.type === "recovery") showRecovery();
+    else { recovering = true; show("authView"); $("authMain").classList.add("hidden"); $("authConfirm").classList.remove("hidden"); }
+  }
   sb.auth.onAuthStateChange((ev, session) => {
     const was = user && user.id; user = session ? session.user : null;
     if (/[?&]code=/.test(location.search)) history.replaceState(null, "", pageUrl() + (back() ? "?retour=" + encodeURIComponent(back()) : ""));
-    if (ev === "PASSWORD_RECOVERY") { recovering = true; show("authView"); $("authMain").classList.add("hidden"); $("authReset").classList.remove("hidden"); return; }
-    if (!user) { $("userMenu").classList.add("hidden"); if (!q.get("error_description")) enterAuth(); return; }
+    if (ev === "PASSWORD_RECOVERY") { showRecovery(); return; }
+    if (!user) { $("userMenu").classList.add("hidden"); if (!linkErr && !recovering) enterAuth(); return; }
     if (ev === "SIGNED_IN" && !was && back()) return afterLogin();
     setTimeout(enterHome, 0);
   });
