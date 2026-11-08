@@ -170,10 +170,10 @@
   .sfcredit a{color:inherit;font-weight:600}
   .overlay a{color:inherit;font-weight:600}
   .tools{display:flex;align-items:center;gap:10px}
-  .grp{display:inline-flex;border:1px solid var(--line2);border-radius:10px;background:var(--panel);overflow:hidden;flex:none}
-  .grp .iconbtn2{border:0;border-radius:0;width:36px;height:34px;background:none}
-  .grp .iconbtn2 + .iconbtn2{border-left:1px solid var(--line)}
-  .grp .iconbtn2:hover:not(:disabled){background:var(--hover)}
+  .tgrp{display:inline-flex;border:1px solid var(--line2);border-radius:10px;background:var(--panel);overflow:hidden;flex:none}
+  .tgrp .iconbtn2{border:0;border-radius:0;width:36px;height:34px;background:none}
+  .tgrp .iconbtn2 + .iconbtn2{border-left:1px solid var(--line)}
+  .tgrp .iconbtn2:hover:not(:disabled){background:var(--hover)}
   .ghostbtn{border:0;background:none;color:var(--muted);font-weight:600;font-size:13px;padding:8px 10px;border-radius:9px;cursor:pointer;white-space:nowrap}
   .ghostbtn:hover{background:var(--hover);color:var(--ink)}
   .vsep{width:1px;height:24px;background:var(--line2);flex:none}
@@ -284,8 +284,8 @@
   <div class="spacer"></div>
   <div class="stats" id="stats"></div>
   <div class="tools">
-    <div class="grp" role="group" aria-label="Historique"><button class="iconbtn2" id="undoBtn" title="Annuler (Cmd+Z)" aria-label="Annuler" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button><button class="iconbtn2" id="redoBtn" title="Rétablir (Cmd+Maj+Z)" aria-label="Rétablir" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button></div>
-    <div class="grp" role="group" aria-label="Projet"><button class="iconbtn2" id="openBtn" title="Ouvrir un projet" aria-label="Ouvrir un projet"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button><button class="iconbtn2" id="saveBtn" title="Enregistrer le projet (Cmd+S)" aria-label="Enregistrer le projet"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 4h11l3 3v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg></button></div>
+    <div class="tgrp" role="group" aria-label="Historique"><button class="iconbtn2" id="undoBtn" title="Annuler (Cmd+Z)" aria-label="Annuler" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button><button class="iconbtn2" id="redoBtn" title="Rétablir (Cmd+Maj+Z)" aria-label="Rétablir" disabled><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button></div>
+    <div class="tgrp" role="group" aria-label="Projet"><button class="iconbtn2" id="openBtn" title="Ouvrir un projet" aria-label="Ouvrir un projet"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button><button class="iconbtn2" id="saveBtn" title="Enregistrer le projet (Cmd+S)" aria-label="Enregistrer le projet"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 4h11l3 3v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg></button></div>
     <button class="ghostbtn" id="galleryBtn">Exemples</button>
     <input type="file" id="projIn" accept=".json,application/json" class="hidden">
   </div>
@@ -1918,16 +1918,23 @@ function scheduleAutosave() {
   clearTimeout(autosaveTimer);
   autosaveTimer = setTimeout(() => { if (S.img || S.texts.length || Object.keys(S.results).length) idbSet("last", projectData()).catch(() => { }); }, 1200);
 }
+// Reprise du dernier projet : on demande une seule fois, puis le choix est retenu
+// (« Reprendre » : le dernier projet revient tout seul à chaque visite ; « Ignorer » : on repart d'une page vide).
 async function offerResume() {
-  if (ACC_WANT) { autosaveReady = true; return; }      // ouverture d'un modèle du compte : pas de proposition de reprise
+  if (ACC_WANT) { autosaveReady = true; return; }      // ouverture d'un modèle du compte : pas de reprise
   let last = null; try { last = await idbGet("last"); } catch (e) { }
   autosaveReady = true;
   if (!last || !(last.image || (last.state && last.state.texts && last.state.texts.length))) return;
+  let pref = null; try { pref = localStorage.getItem("atelier-reprise"); } catch (e) { }
+  const remember = v => { try { localStorage.setItem("atelier-reprise", v); } catch (e) { } };
+  const resume = async () => { try { await loadProject(last); toast("Ton dernier projet a été repris."); } catch (e) { toast(e.message); } };
+  if (pref === "auto") return resume();
+  if (pref === "jamais") return;
   const when = new Date(last.saved);
   $("resumeTxt").textContent = "Reprendre ton dernier projet (" + when.toLocaleDateString("fr-FR") + " à " + when.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) + ") ?";
   $("resume").classList.remove("hidden");
-  $("resumeYes").onclick = async () => { $("resume").classList.add("hidden"); try { await loadProject(last); } catch (e) { toast(e.message); } };
-  $("resumeNo").onclick = () => $("resume").classList.add("hidden");
+  $("resumeYes").onclick = async () => { $("resume").classList.add("hidden"); remember("auto"); await resume(); };
+  $("resumeNo").onclick = () => { $("resume").classList.add("hidden"); remember("jamais"); };
 }
 let toastTimer = 0;
 function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 3200); }
