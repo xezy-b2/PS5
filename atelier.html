@@ -181,11 +181,48 @@
   .excard:hover{border-color:var(--ink)}
   .excard b{font-size:13px} .excard small{font-size:11.5px;color:var(--muted);line-height:1.35}
   .exthumb{width:100%;height:auto;border-radius:6px;margin-bottom:6px;display:block}
+  .btn.acc{display:flex;align-items:center;gap:7px;padding:5px 11px 5px 6px;white-space:nowrap}
+  .av{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:700;background-size:cover;background-position:center;flex:none}
+  .av:empty{background:var(--line2)}
+  .av.big{width:42px;height:42px;font-size:18px}
+  .accsheet{width:min(640px,100%)}
+  .accview{display:flex;flex-direction:column;gap:12px}
+  .seg{display:flex;background:var(--bg);border:1px solid var(--line2);border-radius:10px;padding:3px}
+  .seg button{flex:1;border:0;background:none;padding:7px;border-radius:7px;font-weight:600;font-size:13px;cursor:pointer;color:var(--muted)}
+  .seg button.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 3px #0002}
+  .btn.discord{display:flex;align-items:center;justify-content:center;gap:9px;background:#5865F2;border-color:#5865F2;color:#fff;padding:9px}
+  .btn.discord:hover{background:#4752C4}
+  .or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px}
+  .or::before,.or::after{content:"";flex:1;height:1px;background:var(--line2)}
+  .accform{display:flex;flex-direction:column;gap:10px}
+  input[type=email],input[type=password]{background:var(--panel);border:1px solid var(--line2);border-radius:var(--r-sm);padding:8px 9px;width:100%;font-size:13px;color:var(--ink)}
+  .linkbtn{background:none;border:0;color:var(--muted);font-size:12.5px;cursor:pointer;text-decoration:underline;align-self:flex-start;padding:0}
+  .accmsg{margin:0;font-size:12.5px;min-height:1em;color:var(--muted)}
+  .accmsg.err{color:var(--err)} .accmsg.ok{color:var(--ok)}
+  .who{display:flex;align-items:center;gap:12px}
+  .who b{display:block;font-size:15px} .who small{color:var(--muted);font-size:12.5px}
+  .savebox{border:1px solid var(--line2);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px}
+  .saverow{display:flex;gap:8px;flex-wrap:wrap}
+  .accview h4{margin:6px 0 0;font-size:14px}
+  .mdlgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px}
+  .mdl{border:1px solid var(--line2);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px}
+  .mdl.cur{border-color:var(--accent)}
+  .mdl img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:6px;background:var(--bg);cursor:pointer}
+  .mdl b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .mdl small{font-size:11.5px;color:var(--muted)}
+  .mdl .row{display:flex;gap:6px} .mdl .row .btn{flex:1;padding:5px 4px;font-size:12px;font-weight:500}
+  .mdlempty{color:var(--muted);font-size:13px;grid-column:1/-1}
+  .accset{border-top:1px solid var(--line2);padding-top:10px}
+  .accset summary{cursor:pointer;font-weight:600;font-size:13.5px;margin-bottom:10px}
+  .accset .field{margin-bottom:10px}
+  .inrow{display:flex;gap:8px}
+  .btn.danger{color:var(--err);border-color:color-mix(in srgb,var(--err) 50%,transparent)}
+  .btn.danger.armed{background:var(--err);color:#fff}
   .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:9px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:70;max-width:calc(100% - 32px)}
   .toast.show{opacity:1;transform:translate(-50%,0)}
   @media (max-width:1180px){.stats{display:none}}
   @media (max-width:1420px){.stats{display:none}.brand{min-width:0}.brand .model{display:none}}
-  @media (max-width:1280px){.brand .model{display:none}#galleryBtn{display:none}}
+  @media (max-width:1500px){#accLbl{display:none}.btn.acc{padding:5px}}
+  @media (max-width:1280px){.brand .model{display:none}#galleryBtn{display:none}#accLbl{display:none}.btn.acc{padding:5px}}
   header.top .btn,.tabs button{white-space:nowrap}
   .conbar{position:absolute;right:16px;top:16px;z-index:2}
   .conbar .btn{padding:6px 11px;font-size:12.5px}
@@ -231,6 +268,7 @@
     <button class="iconbtn2" id="openBtn" title="Ouvrir un projet" aria-label="Ouvrir un projet"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
     <button class="iconbtn2" id="saveBtn" title="Enregistrer le projet (Cmd+S)" aria-label="Enregistrer le projet"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 4h11l3 3v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg></button>
     <button class="btn" id="galleryBtn">Exemples</button>
+    <button class="btn acc hidden" id="accBtn" aria-haspopup="dialog"><span class="av" id="accAv"></span><span id="accLbl">Se connecter</span></button>
     <input type="file" id="projIn" accept=".json,application/json" class="hidden">
   </div>
   <button class="theme" id="themeBtn" aria-label="Changer de thème">
@@ -375,6 +413,52 @@
     <div class="sheethead"><h3 id="galleryTitle">Exemples</h3><button class="iconbtn2" id="galleryClose" aria-label="Fermer">✕</button></div>
     <p class="hint" style="margin:0 0 14px">Des visuels prêts à l'emploi pour un côté entier de la console. Choisis-en un, puis modifie couleurs et textes à ta guise.</p>
     <div class="exgrid" id="galleryGrid"></div>
+  </div>
+</div>
+<div class="modal hidden" id="acc" role="dialog" aria-modal="true" aria-labelledby="accTitle">
+  <div class="sheet accsheet">
+    <div class="sheethead"><h3 id="accTitle">Mon compte</h3><button class="iconbtn2" id="accClose" aria-label="Fermer">✕</button></div>
+
+    <div id="accLogin" class="accview">
+      <div class="seg" role="tablist"><button id="tabIn" class="on" role="tab">Connexion</button><button id="tabUp" role="tab">Créer un compte</button></div>
+      <button class="btn discord" id="discordBtn"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.3 5.3A16.6 16.6 0 0 0 15.2 4l-.5 1a15.4 15.4 0 0 0-5.4 0L8.8 4a16.5 16.5 0 0 0-4.1 1.3C2.1 9.2 1.4 13 1.7 16.7a16.7 16.7 0 0 0 5.1 2.6l1.1-1.7c-.6-.2-1.2-.5-1.7-.8l.4-.3a11.9 11.9 0 0 0 10.2 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.7a16.6 16.6 0 0 0 5.1-2.6c.4-4.3-.7-8-2.9-11.4ZM8.7 14.5c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Zm6.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Z"/></svg>Continuer avec Discord</button>
+      <div class="or"><span>ou avec ton e-mail</span></div>
+      <form id="authForm" class="accform" novalidate>
+        <label class="field hidden" id="pseudoF"><span>Pseudo</span><input type="text" id="authPseudo" maxlength="30" autocomplete="nickname"></label>
+        <label class="field"><span>E-mail</span><input type="email" id="authEmail" required autocomplete="email"></label>
+        <label class="field"><span>Mot de passe</span><input type="password" id="authPass" required minlength="8" autocomplete="current-password"></label>
+        <button class="btn primary" id="authSubmit" type="submit">Se connecter</button>
+        <button class="linkbtn" id="forgotBtn" type="button">Mot de passe oublié ?</button>
+      </form>
+      <p class="accmsg" id="authMsg" role="status"></p>
+    </div>
+
+    <div id="accReset" class="accview hidden">
+      <p class="hint" style="margin-top:0">Choisis ton nouveau mot de passe.</p>
+      <form id="resetForm" class="accform" novalidate>
+        <label class="field"><span>Nouveau mot de passe</span><input type="password" id="resetPass" minlength="8" autocomplete="new-password"></label>
+        <button class="btn primary" type="submit">Enregistrer le mot de passe</button>
+      </form>
+      <p class="accmsg" id="resetMsg" role="status"></p>
+    </div>
+
+    <div id="accHome" class="accview hidden">
+      <div class="who"><span class="av big" id="whoAv"></span><div><b id="whoName"></b><small id="whoMail"></small></div></div>
+      <div class="savebox">
+        <label class="field"><span>Nom du modèle</span><input type="text" id="mdlName" maxlength="80" placeholder="Ma coque PSG"></label>
+        <div class="saverow"><button class="btn primary" id="mdlSave">Enregistrer dans mon compte</button><button class="btn hidden" id="mdlSaveNew">Enregistrer comme nouveau</button></div>
+        <p class="accmsg" id="saveMsg" role="status"></p>
+      </div>
+      <h4>Mes modèles</h4>
+      <div class="mdlgrid" id="mdlGrid"></div>
+      <details class="accset">
+        <summary>Paramètres du compte</summary>
+        <label class="field"><span>Pseudo</span><div class="inrow"><input type="text" id="setPseudo" maxlength="30"><button class="btn" id="setPseudoBtn">Changer</button></div></label>
+        <label class="field" id="setPassF"><span>Nouveau mot de passe</span><div class="inrow"><input type="password" id="setPass" minlength="8" autocomplete="new-password"><button class="btn" id="setPassBtn">Changer</button></div></label>
+        <div class="saverow"><button class="btn" id="logoutBtn">Se déconnecter</button><button class="btn danger" id="delAccBtn">Supprimer mon compte</button></div>
+        <p class="accmsg" id="setMsg" role="status"></p>
+      </details>
+    </div>
   </div>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -1752,7 +1836,7 @@ document.addEventListener("keydown", e => {
   const k = e.key.toLowerCase();
   if (k === "z" && !e.shiftKey) { e.preventDefault(); undo(); }
   else if ((k === "z" && e.shiftKey) || k === "y") { e.preventDefault(); redo(); }
-  else if (k === "s") { e.preventDefault(); saveProject(); }
+  else if (k === "s") { e.preventDefault(); if (ACC.user) { openAcc(); saveModel(false); } else saveProject(); }
 });
 
 // =====================================================================================
@@ -1961,6 +2045,238 @@ try { if (localStorage.getItem("atelier-nav") === "0") setNav(false); } catch (e
 $("spinRow").classList.add("hidden");
 renderSlots(); resize3D(); syncPlaceUI(); updateHistoryUI();
 rebuildWorkspace().then(() => { H.last = snapshot(); if (location.hash === "#exemples") { autosaveReady = true; openGallery(); } else offerResume(); });
+
+// =====================================================================================
+// Compte (Supabase) : connexion e-mail ou Discord, modèles enregistrés dans le compte
+// =====================================================================================
+const SUPA_URL = "", SUPA_KEY = "";
+const ACC = { sb: null, user: null, cur: null, models: [] };   // cur : modèle du compte ouvert en ce moment
+const accOn = () => SUPA_URL.startsWith("https://") && SUPA_KEY.length > 20;
+const pseudoOf = u => { const m = (u && u.user_metadata) || {}; return m.pseudo || m.custom_claims?.global_name || m.full_name || m.name || (u && u.email ? u.email.split("@")[0] : "Moi"); };
+function setAv(el, u) {
+  const url = u && u.user_metadata && u.user_metadata.avatar_url;
+  el.style.backgroundImage = url ? `url("${url}")` : ""; el.textContent = u && !url ? pseudoOf(u).slice(0, 1).toUpperCase() : "";
+}
+function accMsg(id, txt, kind) { const e = $(id); e.textContent = txt || ""; e.className = "accmsg" + (kind ? " " + kind : ""); }
+const frErr = e => {
+  const m = (e && (e.message || e.error_description)) || String(e);
+  if (/Invalid login credentials/i.test(m)) return "E-mail ou mot de passe incorrect.";
+  if (/Email not confirmed/i.test(m)) return "Confirme d'abord ton e-mail avec le lien reçu.";
+  if (/already registered|already exists/i.test(m)) return "Un compte existe déjà avec cet e-mail.";
+  if (/Password should be at least/i.test(m)) return "Le mot de passe doit faire au moins 8 caractères.";
+  if (/rate limit|too many/i.test(m)) return "Trop d'essais d'un coup. Réessaie dans quelques minutes.";
+  if (/should be different/i.test(m)) return "Choisis un mot de passe différent de l'ancien.";
+  if (/Failed to fetch|NetworkError/i.test(m)) return "Connexion au serveur impossible. Vérifie ta connexion Internet.";
+  return m;
+};
+const pageUrl = () => location.origin + location.pathname;
+function showAccView(v) { ["accLogin", "accReset", "accHome"].forEach(id => $(id).classList.toggle("hidden", id !== v)); }
+function openAcc(view) {
+  $("acc").classList.remove("hidden");
+  if (view) showAccView(view); else if (ACC.user) { showAccView("accHome"); refreshModels(); } else showAccView("accLogin");
+  if (ACC.user) { $("mdlName").value = ACC.cur ? ACC.cur.name : ($("mdlName").value || defaultModelName()); syncSaveButtons(); }
+}
+function closeAcc() { $("acc").classList.add("hidden"); }
+function defaultModelName() { return (S.img && S.img.label ? S.img.label.replace(/\.[a-z0-9]+$/i, "") : "Mon modèle") .slice(0, 80); }
+function syncSaveButtons() {
+  const same = ACC.cur && $("mdlName").value.trim() === ACC.cur.name;
+  $("mdlSave").textContent = ACC.cur ? "Mettre à jour « " + ACC.cur.name + " »" : "Enregistrer dans mon compte";
+  $("mdlSaveNew").classList.toggle("hidden", !ACC.cur);
+  if (ACC.cur && !same) $("mdlSave").textContent = "Mettre à jour et renommer en « " + ($("mdlName").value.trim() || "…") + " »";
+}
+function renderAccUser() {
+  const u = ACC.user;
+  $("accLbl").textContent = u ? pseudoOf(u) : "Se connecter"; setAv($("accAv"), u);
+  if (!u) return;
+  setAv($("whoAv"), u); $("whoName").textContent = pseudoOf(u); $("whoMail").textContent = u.email || "";
+  $("setPseudo").value = pseudoOf(u);
+  // compte Discord seul : pas de mot de passe à changer
+  const hasPass = (u.identities || []).some(i => i.provider === "email") || u.app_metadata?.provider === "email";
+  $("setPassF").classList.toggle("hidden", !hasPass);
+}
+function thumbOfWork() {
+  const src = $("c2d"), w = 240, h = Math.round(240 * 1.25), c = document.createElement("canvas"); c.width = w; c.height = h;
+  const g = c.getContext("2d"); g.fillStyle = getComputedStyle(document.body).getPropertyValue("--stage") || "#1C1E23"; g.fillRect(0, 0, w, h);
+  if (src.width && src.height) { const s = Math.min(w / src.width, h / src.height), dw = src.width * s, dh = src.height * s; g.drawImage(src, (w - dw) / 2, (h - dh) / 2, dw, dh); }
+  return c.toDataURL("image/jpeg", 0.78);
+}
+async function refreshModels() {
+  const grid = $("mdlGrid");
+  const { data, error } = await ACC.sb.from("models").select("id,name,thumb,updated_at,size").order("updated_at", { ascending: false });
+  if (error) { grid.innerHTML = ""; const p = document.createElement("p"); p.className = "mdlempty"; p.textContent = "Impossible de charger tes modèles : " + frErr(error); grid.append(p); return; }
+  ACC.models = data; grid.innerHTML = "";
+  if (!data.length) { const p = document.createElement("p"); p.className = "mdlempty"; p.textContent = "Aucun modèle pour l'instant. Enregistre ton design ci-dessus pour le retrouver ici, sur n'importe quel appareil."; grid.append(p); return; }
+  for (const m of data) {
+    const card = document.createElement("div"); card.className = "mdl" + (ACC.cur && ACC.cur.id === m.id ? " cur" : "");
+    const img = document.createElement("img"); img.alt = ""; if (m.thumb) img.src = m.thumb; img.title = "Ouvrir"; img.onclick = () => openModel(m);
+    const b = document.createElement("b"); b.textContent = m.name; b.title = m.name;
+    const s = document.createElement("small"); s.textContent = "Modifié le " + new Date(m.updated_at).toLocaleDateString("fr-FR") + " à " + new Date(m.updated_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    const row = document.createElement("div"); row.className = "row";
+    const mk = (t, f, cls) => { const x = document.createElement("button"); x.className = "btn" + (cls ? " " + cls : ""); x.textContent = t; x.onclick = f; row.append(x); return x; };
+    mk("Ouvrir", () => openModel(m));
+    mk("Renommer", () => renameModel(m, card));
+    const del = mk("Supprimer", async () => {
+      if (!del.classList.contains("armed")) { del.classList.add("armed"); del.textContent = "Confirmer"; setTimeout(() => { del.classList.remove("armed"); del.textContent = "Supprimer"; }, 4000); return; }
+      await deleteModel(m);
+    }, "danger");
+    card.append(img, b, s, row); grid.append(card);
+  }
+}
+async function saveModel(asNew) {
+  if (!ACC.user) return openAcc("accLogin");
+  if (!S.img && !S.texts.length) return accMsg("saveMsg", "Ajoute d'abord une image ou un texte.", "err");
+  const name = ($("mdlName").value.trim() || defaultModelName()).slice(0, 80);
+  $("mdlSave").disabled = $("mdlSaveNew").disabled = true; accMsg("saveMsg", "Enregistrement…");
+  try {
+    const json = JSON.stringify(projectData()), thumb = thumbOfWork(), uid = ACC.user.id;
+    let id = !asNew && ACC.cur ? ACC.cur.id : null;     // mise à jour du modèle ouvert, sinon nouveau modèle
+    if (!id) {
+      const { data, error } = await ACC.sb.from("models").insert({ name, thumb, size: json.length }).select("id").single();
+      if (error) throw error; id = data.id;
+    }
+    const up = await ACC.sb.storage.from("models").upload(uid + "/" + id + ".json", new Blob([json], { type: "application/json" }), { upsert: true, contentType: "application/json" });
+    if (up.error) throw up.error;
+    const { error } = await ACC.sb.from("models").update({ name, thumb, size: json.length, updated_at: new Date().toISOString() }).eq("id", id);
+    if (error) throw error;
+    ACC.cur = { id, name }; syncSaveButtons();
+    accMsg("saveMsg", "« " + name + " » est enregistré dans ton compte.", "ok"); toast("Modèle enregistré dans ton compte.");
+    refreshModels();
+  } catch (e) { accMsg("saveMsg", "Échec de l'enregistrement : " + frErr(e), "err"); }
+  finally { $("mdlSave").disabled = $("mdlSaveNew").disabled = false; }
+}
+async function openModel(m) {
+  accMsg("saveMsg", "Ouverture de « " + m.name + " »…");
+  try {
+    const { data, error } = await ACC.sb.storage.from("models").download(ACC.user.id + "/" + m.id + ".json");
+    if (error) throw error;
+    await loadProject(JSON.parse(await data.text()));
+    ACC.cur = { id: m.id, name: m.name }; $("mdlName").value = m.name; syncSaveButtons(); accMsg("saveMsg", "");
+    closeAcc(); toast("« " + m.name + " » ouvert.");
+  } catch (e) { accMsg("saveMsg", "Impossible d'ouvrir ce modèle : " + frErr(e), "err"); }
+}
+function renameModel(m, card) {
+  const b = card.querySelector("b"), inp = document.createElement("input"); inp.type = "text"; inp.value = m.name; inp.maxLength = 80;
+  b.replaceWith(inp); inp.focus(); inp.select();
+  const done = async ok => {
+    const name = inp.value.trim();
+    if (ok && name && name !== m.name) {
+      const { error } = await ACC.sb.from("models").update({ name }).eq("id", m.id);
+      if (error) { toast("Renommage impossible : " + frErr(error)); }
+      else if (ACC.cur && ACC.cur.id === m.id) { ACC.cur.name = name; $("mdlName").value = name; syncSaveButtons(); }
+    }
+    refreshModels();
+  };
+  inp.onkeydown = e => { if (e.key === "Enter") done(true); else if (e.key === "Escape") done(false); };
+  inp.onblur = () => done(true);
+}
+async function deleteModel(m) {
+  const r = await ACC.sb.storage.from("models").remove([ACC.user.id + "/" + m.id + ".json"]);
+  const { error } = await ACC.sb.from("models").delete().eq("id", m.id);
+  if (error || r.error) toast("Suppression impossible : " + frErr(error || r.error));
+  else { if (ACC.cur && ACC.cur.id === m.id) { ACC.cur = null; syncSaveButtons(); } toast("« " + m.name + " » supprimé."); }
+  refreshModels();
+}
+let authMode = "in";
+function setAuthMode(m) {
+  authMode = m; $("tabIn").classList.toggle("on", m === "in"); $("tabUp").classList.toggle("on", m === "up");
+  $("pseudoF").classList.toggle("hidden", m !== "up"); $("forgotBtn").classList.toggle("hidden", m !== "in");
+  $("authSubmit").textContent = m === "in" ? "Se connecter" : "Créer mon compte";
+  $("authPass").autocomplete = m === "in" ? "current-password" : "new-password"; accMsg("authMsg", "");
+}
+async function initAccount() {
+  if (!accOn()) return;
+  let createClient;
+  try { ({ createClient } = await import("https://esm.sh/@supabase/supabase-js@2.119.0")); }
+  catch (e) { console.warn("Comptes indisponibles ici.", e); return; }
+  ACC.sb = createClient(SUPA_URL, SUPA_KEY, { auth: { persistSession: true, detectSessionInUrl: true, flowType: "pkce" } });
+  $("accBtn").classList.remove("hidden");
+  ACC.sb.auth.onAuthStateChange((ev, session) => {
+    const was = ACC.user && ACC.user.id;
+    ACC.user = session ? session.user : null; renderAccUser();
+    if (!ACC.user || ACC.user.id !== was) ACC.cur = null;
+    if (ev === "PASSWORD_RECOVERY") { openAcc("accReset"); }
+    else if (ev === "SIGNED_IN" && !was) {
+      if (/[?&](code|error)=|access_token=/.test(location.href)) history.replaceState(null, "", pageUrl());
+      if (!$("acc").classList.contains("hidden")) openAcc();
+      toast("Connecté : " + pseudoOf(ACC.user));
+    } else if (ev === "SIGNED_OUT" && !$("acc").classList.contains("hidden")) showAccView("accLogin");
+  });
+  const q = new URLSearchParams(location.search);
+  if (q.get("error_description")) { openAcc("accLogin"); accMsg("authMsg", frErr(q.get("error_description")), "err"); history.replaceState(null, "", pageUrl()); }
+
+  $("accBtn").onclick = () => openAcc(); $("accClose").onclick = closeAcc;
+  $("acc").addEventListener("click", e => { if (e.target.id === "acc") closeAcc(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("acc").classList.contains("hidden")) closeAcc(); });
+  $("tabIn").onclick = () => setAuthMode("in"); $("tabUp").onclick = () => setAuthMode("up");
+  $("discordBtn").onclick = async () => {
+    const { error } = await ACC.sb.auth.signInWithOAuth({ provider: "discord", options: { redirectTo: pageUrl() } });
+    if (error) accMsg("authMsg", frErr(error), "err");
+  };
+  $("authForm").onsubmit = async e => {
+    e.preventDefault();
+    const email = $("authEmail").value.trim(), password = $("authPass").value;
+    if (!/^\S+@\S+\.\S+$/.test(email)) return accMsg("authMsg", "Entre une adresse e-mail valide.", "err");
+    if (password.length < 8) return accMsg("authMsg", "Le mot de passe doit faire au moins 8 caractères.", "err");
+    $("authSubmit").disabled = true; accMsg("authMsg", authMode === "in" ? "Connexion…" : "Création du compte…");
+    try {
+      if (authMode === "in") {
+        const { error } = await ACC.sb.auth.signInWithPassword({ email, password }); if (error) throw error;
+        $("authPass").value = ""; accMsg("authMsg", ""); openAcc();
+      } else {
+        const pseudo = $("authPseudo").value.trim();
+        if (pseudo.length < 2) throw new Error("Choisis un pseudo d'au moins 2 caractères.");
+        const { data, error } = await ACC.sb.auth.signUp({ email, password, options: { data: { pseudo }, emailRedirectTo: pageUrl() } });
+        if (error) throw error;
+        $("authPass").value = "";
+        if (data.session) { accMsg("authMsg", ""); openAcc(); }
+        else accMsg("authMsg", "Compte créé ! Clique sur le lien reçu par e-mail pour l'activer, puis connecte-toi.", "ok");
+      }
+    } catch (err) { accMsg("authMsg", frErr(err), "err"); }
+    finally { $("authSubmit").disabled = false; }
+  };
+  $("forgotBtn").onclick = async () => {
+    const email = $("authEmail").value.trim();
+    if (!/^\S+@\S+\.\S+$/.test(email)) return accMsg("authMsg", "Entre d'abord ton adresse e-mail ci-dessus.", "err");
+    const { error } = await ACC.sb.auth.resetPasswordForEmail(email, { redirectTo: pageUrl() });
+    accMsg("authMsg", error ? frErr(error) : "Si un compte existe pour cette adresse, un lien pour changer le mot de passe vient d'être envoyé.", error ? "err" : "ok");
+  };
+  $("resetForm").onsubmit = async e => {
+    e.preventDefault();
+    const password = $("resetPass").value;
+    if (password.length < 8) return accMsg("resetMsg", "Au moins 8 caractères.", "err");
+    const { error } = await ACC.sb.auth.updateUser({ password });
+    if (error) return accMsg("resetMsg", frErr(error), "err");
+    $("resetPass").value = ""; accMsg("resetMsg", ""); toast("Mot de passe changé."); openAcc();
+  };
+  $("mdlSave").onclick = () => saveModel(false); $("mdlSaveNew").onclick = () => saveModel(true);
+  $("mdlName").oninput = syncSaveButtons;
+  $("setPseudoBtn").onclick = async () => {
+    const pseudo = $("setPseudo").value.trim(); if (pseudo.length < 2) return accMsg("setMsg", "Au moins 2 caractères.", "err");
+    const { data, error } = await ACC.sb.auth.updateUser({ data: { pseudo } });
+    if (error) return accMsg("setMsg", frErr(error), "err");
+    ACC.user = data.user; renderAccUser(); accMsg("setMsg", "Pseudo changé.", "ok");
+  };
+  $("setPassBtn").onclick = async () => {
+    const password = $("setPass").value; if (password.length < 8) return accMsg("setMsg", "Le mot de passe doit faire au moins 8 caractères.", "err");
+    const { error } = await ACC.sb.auth.updateUser({ password });
+    if (error) return accMsg("setMsg", frErr(error), "err");
+    $("setPass").value = ""; accMsg("setMsg", "Mot de passe changé.", "ok");
+  };
+  $("logoutBtn").onclick = async () => { await ACC.sb.auth.signOut(); closeAcc(); toast("Déconnecté."); };
+  $("delAccBtn").onclick = async () => {
+    const btn = $("delAccBtn");
+    if (!btn.classList.contains("armed")) { btn.classList.add("armed"); btn.textContent = "Confirmer : tout supprimer"; accMsg("setMsg", "Ton compte et tous tes modèles seront supprimés définitivement.", "err"); setTimeout(() => { btn.classList.remove("armed"); btn.textContent = "Supprimer mon compte"; }, 6000); return; }
+    btn.disabled = true;
+    try {
+      const { data: files } = await ACC.sb.storage.from("models").list(ACC.user.id, { limit: 1000 });
+      if (files && files.length) await ACC.sb.storage.from("models").remove(files.map(f => ACC.user.id + "/" + f.name));
+      const { error } = await ACC.sb.rpc("delete_my_account"); if (error) throw error;
+      await ACC.sb.auth.signOut(); closeAcc(); toast("Compte supprimé.");
+    } catch (e) { accMsg("setMsg", "Suppression impossible : " + frErr(e), "err"); }
+    finally { btn.disabled = false; btn.classList.remove("armed"); btn.textContent = "Supprimer mon compte"; }
+  };
+}
+initAccount();
 
 </script>
 </body>
