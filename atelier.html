@@ -2049,7 +2049,7 @@ rebuildWorkspace().then(() => { H.last = snapshot(); if (location.hash === "#exe
 // =====================================================================================
 // Compte (Supabase) : connexion e-mail ou Discord, modèles enregistrés dans le compte
 // =====================================================================================
-const SUPA_URL = "", SUPA_KEY = "";
+const SUPA_URL = "https://vpwjwowjremshsucfixr.supabase.co", SUPA_KEY = "sb_publishable_Iz1YiUqZrRlrG2VgzhXJvA_OGfRw57_";
 const ACC = { sb: null, user: null, cur: null, models: [] };   // cur : modèle du compte ouvert en ce moment
 const accOn = () => SUPA_URL.startsWith("https://") && SUPA_KEY.length > 20;
 const pseudoOf = u => { const m = (u && u.user_metadata) || {}; return m.pseudo || m.custom_claims?.global_name || m.full_name || m.name || (u && u.email ? u.email.split("@")[0] : "Moi"); };
