@@ -202,6 +202,15 @@
   .av:empty{background:var(--line2)}
   .av.big{width:42px;height:42px;font-size:18px}
   .accsheet{width:min(440px,100%)}
+  .amsbox{margin-top:14px;border:1px solid var(--line2);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--panel)}
+  .amstop{display:flex;align-items:center;gap:10px}
+  .amstop b{font-size:13px}
+  .amschips{display:flex;gap:4px;flex:1;flex-wrap:wrap}
+  .amschips i{width:18px;height:18px;border-radius:50%;border:1px solid #0000002a;display:block}
+  .amsedit{font-size:12.5px;color:var(--muted)}
+  .amsauto{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);cursor:pointer}
+  .amsbox .btn.primary{width:100%}
+  .slot .ams{font-weight:700;color:var(--ink);font-size:11.5px;border:1px solid var(--line2);border-radius:5px;padding:0 4px;margin-left:4px}
   .accdrop{position:fixed;z-index:70;background:var(--panel);border:1px solid var(--line2);border-radius:12px;box-shadow:0 18px 50px #0003;min-width:250px;padding:6px}
   .accdrop .dhead{display:flex;align-items:center;gap:10px;padding:8px 10px 10px;border-bottom:1px solid var(--line);margin-bottom:6px}
   .accdrop .dhead b{display:block;font-size:14px} .accdrop .dhead small{color:var(--muted);font-size:12px}
@@ -358,6 +367,11 @@
       <button class="btn" id="snap">Adapter à cette gamme</button>
     </div>
     <p class="hint">Clique une pastille pour choisir un filament Bambu. « = coque » fond une couleur dans celle de la coque, ✕ la supprime.</p>
+    <div class="amsbox hidden" id="amsBox">
+      <div class="amstop"><b>Mon AMS</b><span class="amschips" id="amsChips"></span><a class="amsedit" id="amsEdit" href="compte.html#ams">Modifier</a></div>
+      <button class="btn primary" id="amsUse">Utiliser mon AMS</button>
+      <label class="amsauto hidden" id="amsAutoRow"><input type="checkbox" id="amsAuto"> Appliquer automatiquement à chaque nouvelle image</label>
+    </div>
   </section>
 
   <section class="step">
@@ -439,6 +453,7 @@
   <div class="dhead"><span class="av big" id="dAv"></span><div><b id="dName"></b><small id="dMail"></small></div></div>
   <button role="menuitem" id="dSave">Enregistrer dans mon compte</button>
   <a role="menuitem" href="compte.html">Mes modèles</a>
+  <a role="menuitem" href="compte.html#ams">Mon AMS</a>
   <a role="menuitem" href="compte.html#parametres">Paramètres du compte</a>
   <hr>
   <button role="menuitem" id="dLogout">Se déconnecter</button>
@@ -889,6 +904,7 @@ const BAMBU_BY_HEX = {};
 for (const [type, list] of Object.entries(BAMBU_COLORS)) for (const [name, h] of list) {
   const k = h.toLowerCase(); if (!BAMBU_BY_HEX[k]) BAMBU_BY_HEX[k] = type + " · " + name;
 }
+let amsUser = null;      // compte connecté (pour « Mon AMS »), renseigné par la partie Compte
 const bambuName = h => BAMBU_BY_HEX[(h || "").toLowerCase()] || "";
 
 // =====================================================================================
@@ -1022,6 +1038,7 @@ function quantize() {
   if ($("smooth").checked) lab = smoothLabels(lab, S.img.w, S.img.h, S.centers.length);
   S.labels = lab; S.labVer++;
   S.slots = S.centers.map((c, i) => ({ color: hex(c), merge: prev[i] && prev.length === S.centers.length ? prev[i].merge : false }));
+  if (amsAutoOn() && amsPalette().length) snapToAms(true);
   renderSlots(); buildQuantCanvas(); repaintIfPossible();
 }
 // Filaments : F1 = coque, puis les couleurs de l'image, puis celles des textes (réutilisées si identiques)
@@ -1040,6 +1057,7 @@ function renderSlots() {
   S.slots.forEach((s, i) => {
     const d = document.createElement("div"); d.className = "slot";
     d.innerHTML = '<button class="swatch" style="background:' + s.color + '"></button><span class="nm">' + (s.merge ? "→ Filament 1 (coque)" : "Filament " + fm.slotExt[i]) +
+      (s.merge || !amsIdOf(s.color) ? "" : '<span class="ams">' + amsIdOf(s.color) + "</span>") +
       '<span class="fname">' + (s.merge ? "" : bambuName(s.color)) + '</span></span><span class="pct">' + (tot ? (100 * counts[i] / tot).toFixed(1) : 0) +
       '%</span><label><input type="checkbox" ' + (s.merge ? "checked" : "") + '>= coque</label>' +
       '<button class="del" title="Supprimer cette couleur : ses zones prennent la couleur restante la plus proche"' + (S.slots.length <= 1 ? " disabled" : "") + '>✕</button>';
@@ -1048,7 +1066,7 @@ function renderSlots() {
     d.querySelector(".del").onclick = () => removeSlot(i);
     box.appendChild(d);
   });
-  $("baseSw").style.background = S.baseColor; $("baseName").textContent = bambuName(S.baseColor);
+  $("baseSw").style.background = S.baseColor; $("baseName").textContent = (amsIdOf(S.baseColor) ? "AMS " + amsIdOf(S.baseColor) + " · " : "") + bambuName(S.baseColor);
   renderFils();
 }
 function colorsChanged() {      // couleurs seulement : pas de nouvelle découpe nécessaire
@@ -1078,9 +1096,9 @@ function removeSlot(idx) {
 }
 function renderFils() {
   const { cols } = filaments();
-  $("fils").innerHTML = cols.slice(1).map((c, i) => '<span class="fil" title="' + (bambuName(c) || c) + '"><i style="background:' + c + '"></i>F' + (i + 1) + (i === 0 ? " coque" : "") + "</span>").join("");
+  $("fils").innerHTML = cols.slice(1).map((c, i) => '<span class="fil" title="' + (bambuName(c) || c) + '"><i style="background:' + c + '"></i>F' + (i + 1) + (amsIdOf(c) ? " → " + amsIdOf(c) : "") + (i === 0 ? " coque" : "") + "</span>").join("");
   const n = cols.length - 1;
-  $("amsNote").innerHTML = n > 4 ? '<div class="note warn">' + n + " filaments : plus que les 4 emplacements d'un AMS. Fusionne ou supprime " + (n - 4) + " couleur" + (n - 4 > 1 ? "s" : "") + " (ou utilise plusieurs AMS).</div>" : "";
+  $("amsNote").innerHTML = n > 4 && amsPalette().length <= 4 ? '<div class="note warn">' + n + " filaments : plus que les 4 emplacements d'un AMS. Fusionne ou supprime " + (n - 4) + " couleur" + (n - 4 > 1 ? "s" : "") + " (ou utilise plusieurs AMS).</div>" : "";
 }
 $("k").oninput = () => { $("kVal").textContent = $("k").value; };
 $("k").onchange = () => { quantize(); draw2D(); invalidateGeom(); };
@@ -2150,7 +2168,7 @@ async function initAccount() {
   let opened = false;
   ACC.sb.auth.onAuthStateChange((ev, session) => {
     const was = ACC.user && ACC.user.id;
-    ACC.user = session ? session.user : null; renderAccUser();
+    ACC.user = amsUser = session ? session.user : null; renderAccUser(); renderAmsBox(); if (S.slots.length) renderSlots();
     if (!ACC.user || ACC.user.id !== was) ACC.cur = null;
     if (want && !opened && ACC.user) { opened = true; history.replaceState(null, "", location.pathname); setTimeout(() => openModelById(want), 0); }
     else if (want && !opened && ev === "INITIAL_SESSION") { opened = true; location.href = "compte.html?retour=" + encodeURIComponent("atelier.html?modele=" + want); }
@@ -2168,6 +2186,51 @@ async function initAccount() {
   $("mdlName").onkeydown = e => { if (e.key === "Enter") saveModel(false); };
 }
 initAccount();
+
+// =====================================================================================
+// Mon AMS : les filaments chargés (enregistrés dans le compte, page Mon compte → Mon AMS).
+// « Utiliser mon AMS » remplace chaque couleur par le filament de l'AMS le plus proche ;
+// les couleurs étant exactement celles de l'AMS, Bambu Studio associe tout seul chaque
+// filament à son emplacement.
+// =====================================================================================
+function amsPalette() {
+  const m = amsUser && amsUser.user_metadata && amsUser.user_metadata.ams;
+  if (!Array.isArray(m)) return [];
+  const out = [];
+  for (const u of m) (u.slots || []).forEach((s, i) => { if (s && /^#[0-9a-f]{6}$/i.test(s.c)) out.push({ id: u.u + (i + 1), c: s.c.toLowerCase(), n: s.n || "" }); });
+  return out;
+}
+function amsIdOf(c) { if (!c) return ""; const p = amsPalette().find(x => x.c === c.toLowerCase()); return p ? p.id : ""; }
+function nearestAms(h, pal) { let best = pal[0].c, bd = Infinity; for (const p of pal) { const d = dE(h, p.c); if (d < bd) { bd = d; best = p.c; } } return best; }
+function amsAutoOn() { try { return localStorage.getItem("atelier-ams-auto") === "1"; } catch (e) { return false; } }
+function snapToAms(silent) {
+  const pal = amsPalette(); if (!pal.length) return false;
+  S.baseColor = nearestAms(S.baseColor, pal); tint = null;
+  S.slots.forEach(s => { s.color = nearestAms(s.color, pal); });
+  S.texts.forEach(t => { t.color = nearestAms(t.color, pal); t._tint = null; });
+  if (!silent) colorsChanged();
+  return true;
+}
+function renderAmsBox() {
+  if (!ACC.sb) return;
+  $("amsBox").classList.remove("hidden");
+  const pal = amsPalette(), u = ACC.user;
+  $("amsChips").innerHTML = pal.map(p => '<i style="background:' + p.c + '" title="' + p.id + (p.n ? " · " + p.n : "") + '"></i>').join("");
+  $("amsEdit").classList.toggle("hidden", !u);
+  $("amsAutoRow").classList.toggle("hidden", !pal.length);
+  $("amsAuto").checked = amsAutoOn();
+  $("amsUse").textContent = !u ? "Se connecter pour utiliser mon AMS" : !pal.length ? "Indiquer les filaments de mon AMS" : "Utiliser mon AMS (" + pal.length + " filament" + (pal.length > 1 ? "s" : "") + ")";
+}
+$("amsUse").onclick = async () => {
+  if (!ACC.user) return (location.href = "compte.html?retour=atelier.html");
+  try { const { data } = await ACC.sb.auth.getUser(); if (data && data.user) ACC.user = amsUser = data.user; } catch (e) { }    // AMS modifié ailleurs
+  renderAmsBox();
+  const pal = amsPalette();
+  if (!pal.length) return (location.href = "compte.html#ams");
+  if (!S.img && !S.texts.length) { renderSlots(); return toast("Ajoute d'abord une image : ses couleurs seront prises dans ton AMS."); }
+  snapToAms(false); toast("Couleurs remplacées par les filaments de ton AMS.");
+};
+$("amsAuto").onchange = e => { try { localStorage.setItem("atelier-ams-auto", e.target.checked ? "1" : "0"); } catch (x) { } if (e.target.checked && (S.img || S.texts.length)) snapToAms(false); };
 
 </script>
 </body>

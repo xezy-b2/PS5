@@ -159,6 +159,31 @@
   .panel.dangerzone{border-color:color-mix(in srgb,var(--err) 35%,var(--line))}
   .panel.dangerzone h2{color:var(--err)}
 
+  .amshead{display:flex;gap:20px;align-items:flex-start;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap}
+  .amshead .sub{max-width:62ch}
+  .unit{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:16px}
+  .unit .uh{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .unit .uh b{font-size:15px}
+  .unit .uh .spacer{flex:1}
+  .slots4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .slotc{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--bg);cursor:pointer;text-align:left;font:inherit;color:inherit}
+  .slotc:hover{border-color:var(--line2)}
+  .slotc.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+  .slotc .spool{aspect-ratio:1;width:100%;max-width:96px;align-self:center;border-radius:50%;display:grid;place-items:center;position:relative;border:1px solid #0000001f}
+  .slotc .spool::after{content:"";width:30%;aspect-ratio:1;border-radius:50%;background:var(--bg);border:1px solid #0000001f}
+  .slotc.empty .spool{background:repeating-linear-gradient(45deg,var(--line) 0 6px,transparent 6px 12px)}
+  .slotc .sl{font-weight:800;font-size:13px;font-variant-numeric:tabular-nums}
+  .slotc .sn{font-size:12.5px;color:var(--muted);min-height:2.6em;line-height:1.3}
+  .picker{background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:16px;margin-top:14px;box-shadow:0 14px 40px #00000014}
+  .picker h4{margin:12px 0 6px;font-size:12.5px;color:var(--muted);font-weight:600}
+  .picker h4:first-of-type{margin-top:0}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{width:28px;height:28px;border-radius:50%;border:1px solid #0000002a;cursor:pointer;padding:0}
+  .chip.sel{outline:2px solid var(--ink);outline-offset:2px}
+  .pickfoot{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+  .pickfoot .pname{flex:1;font-size:13px;font-weight:600;min-width:160px}
+  .pickfoot input[type=color]{width:38px;height:32px;border:1px solid var(--line2);border-radius:8px;padding:2px;background:var(--panel)}
+  @media (max-width:700px){.slots4{grid-template-columns:repeat(2,1fr)}}
   footer{border-top:1px solid var(--line);padding:22px 0 30px;font-size:12.5px;color:var(--muted)}
   footer p{margin:0}
   .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:var(--panel);padding:11px 16px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:.2s;z-index:50}
@@ -192,6 +217,7 @@
       <button class="userbtn" id="userBtn" aria-haspopup="menu" aria-expanded="false"><span class="av" id="topAv"></span><span class="nm" id="topName"></span></button>
       <div class="menu hidden" id="userDrop" role="menu">
         <a href="compte.html" role="menuitem">Mes modèles</a>
+        <a href="compte.html#ams" role="menuitem" data-go="ams">Mon AMS</a>
         <button role="menuitem" data-go="settings">Paramètres</button>
         <a href="atelier.html" role="menuitem">Ouvrir l'atelier</a>
         <hr>
@@ -274,6 +300,7 @@
 
       <div class="tabs" role="tablist">
         <button id="tModels" class="on" role="tab">Mes modèles<span class="count" id="tCount">0</span></button>
+        <button id="tAms" role="tab">Mon AMS</button>
         <button id="tSettings" role="tab">Paramètres</button>
       </div>
 
@@ -285,6 +312,15 @@
           <a class="btn main" href="atelier.html">+ Nouveau modèle</a>
         </div>
         <div class="grid" id="grid"></div>
+      </div>
+
+      <div id="amsPane" class="hidden">
+        <div class="amshead">
+          <div><h2>Les filaments de ton AMS</h2><p class="sub">Indique ce qui est chargé dans chaque emplacement. Dans l'atelier, « Utiliser mon AMS » convertit tes images avec ces couleurs exactes, chacune liée à son emplacement.</p></div>
+          <div class="inrow" style="flex:none"><button class="btn" id="amsAdd">+ Ajouter un AMS</button><button class="btn main" id="amsSave" disabled>Enregistrer</button></div>
+        </div>
+        <div id="amsUnits"></div>
+        <p class="msg" id="amsMsg" role="status"></p>
       </div>
 
       <div id="settingsPane" class="hidden">
@@ -528,19 +564,78 @@ async function remove(m) {
   models = models.filter(x => x.id !== m.id); renderStats(); renderGrid(); toast("« " + m.name + " » supprimé.");
 }
 
+// ---------- Mon AMS ----------
+const BAMBU_COLORS = {"PLA Basic":[["Orange","#FF6A13"],["Orange citrouille","#FF9016"],["Bleu gris","#5B6579"],["Bleu cobalt","#0056B8"],["Turquoise","#00B1B7"],["Cyan","#0086D6"],["Bleu","#0A2989"],["Gris","#8E9089"],["Argenté","#A6A9AA"],["Gris clair","#D1D3D5"],["Gris foncé","#545454"],["Vert gui","#3F8E43"],["Vert vif","#BECF00"],["Vert bambou","#00AE42"],["Noir","#000000"],["Marron","#9D432C"],["Marron cacao","#6F5034"],["Beige","#F7E6DE"],["Rose","#F55A74"],["Violet indigo","#482960"],["Violet","#5E43B7"],["Magenta","#EC008C"],["Rouge","#C12E1F"],["Rouge marron","#9D2235"],["Rose vif","#F5547C"],["Blanc de jade","#FFFFFF"],["Jaune","#F4EE2A"],["Jaune tournesol","#FEC600"],["Bronze","#847D48"],["Doré","#E4BD68"]],"PLA Matte":[["Mandarine","#F99963"],["Bleu ciel","#56B7E6"],["Bleu marine","#0078BF"],["Bleu glacier","#A3D8E1"],["Bleu foncé","#042F56"],["Gris nardo","#757575"],["Gris cendré","#9B9EA0"],["Vert pomme","#C2E189"],["Vert herbacé","#61C680"],["Vert foncé","#68724D"],["Anthracite","#000000"],["Chocolat noir","#4D3324"],["Marron latte","#D3B7A7"],["Marron foncé","#7D6556"],["Caramel","#AE835B"],["Rose sakura","#E8AFCF"],["Violet lilas","#AE96D4"],["Rouge écarlate","#DE4343"],["Terre cuite","#B15533"],["Prune","#950051"],["Rouge foncé","#BB3D43"],["Blanc ivoire","#FFFFFF"],["Blanc os","#CBC6B8"],["Jaune citron","#F7D959"],["Brun clair du désert","#E8DBB7"]],"PETG HF":[["Orange","#F75403"],["Bleu","#002E96"],["Bleu lac","#1F79E5"],["Gris","#ADB1B2"],["Gris foncé","#515151"],["Vert","#00AE42"],["Vert citron","#6EE53C"],["Vert forêt","#39541A"],["Noir","#000000"],["Marron cacahuète","#875718"],["Rouge","#BC0900"],["Blanc","#FFFFFF"],["Jaune","#FFD00B"],["Crème","#F9DFB9"]],"PETG Basic":[["Black","#000000"],["White","#FFFFFF"],["Gray","#7F7E83"],["Yellow","#FCE300"],["Red","#D6001C"],["Reflex Blue","#001489"],["Dark Brown","#4F2C1D"],["Green","#009639"],["Orange","#FF671F"],["Pine Green","#034638"],["Navy Blue","#0086D6"],["Misty Blue","#688197"],["Dark Beige","#DBC8B6"],["Purple","#8A75D1"],["Sunflower Yellow","#FFB81C"],["Bright Green","#97D700"],["Hot Pink","#F277C6"]],"PLA Silk+":[["Bleu layette","#A8C6EE"],["Bleu","#008BDA"],["Gris titane","#5F6367"],["Argenté","#C8C8C8"],["Vert bonbon","#018814"],["Menthe","#96DCB9"],["Violet","#8671CB"],["Rouge bonbon","#D02727"],["Doré rose","#BA9594"],["Rose","#F7ADA6"],["Blanc","#FFFFFF"],["Champagne","#F3CFB2"],["Doré","#F4A925"]]};
+const BAMBU_NAME = {}; for (const [t, l] of Object.entries(BAMBU_COLORS)) for (const [n, h] of l) BAMBU_NAME[h.toLowerCase()] ??= t + " · " + n;
+let ams = [], amsSel = null, amsDirty = false;      // ams : [{u:"A", slots:[{c,n}|null ×4]}]
+const UNITS = "ABCD";
+function amsFromMeta() {
+  const m = meta(user).ams;
+  ams = Array.isArray(m) && m.length ? m.map(u => ({ u: u.u, slots: [0, 1, 2, 3].map(i => u.slots && u.slots[i] ? { c: u.slots[i].c, n: u.slots[i].n || "" } : null) })) : [{ u: "A", slots: [null, null, null, null] }];
+  amsSel = null; amsDirty = false; renderAms();
+}
+function setAmsDirty() { amsDirty = true; $("amsSave").disabled = false; msg("amsMsg"); }
+function renderAms() {
+  const box = $("amsUnits"); box.innerHTML = "";
+  ams.forEach((unit, ui) => {
+    const u = document.createElement("div"); u.className = "unit";
+    u.innerHTML = '<div class="uh"><b>AMS ' + unit.u + '</b><span class="sub" style="font-size:13px">' + unit.slots.filter(Boolean).length + ' / 4 emplacements remplis</span><span class="spacer"></span>' +
+      (ams.length > 1 ? '<button class="btn sm danger" data-rm>Retirer cet AMS</button>' : "") + '</div><div class="slots4"></div>';
+    const g = u.querySelector(".slots4");
+    unit.slots.forEach((s, si) => {
+      const b = document.createElement("button"); const id = unit.u + (si + 1);
+      b.className = "slotc" + (s ? "" : " empty") + (amsSel && amsSel[0] === ui && amsSel[1] === si ? " on" : "");
+      b.innerHTML = '<span class="spool"' + (s ? ' style="background:' + s.c + '"' : "") + '></span><span class="sl">' + id + '</span><span class="sn"></span>';
+      b.querySelector(".sn").textContent = s ? (s.n || s.c.toUpperCase()) : "Vide, clique pour choisir";
+      b.onclick = () => { amsSel = amsSel && amsSel[0] === ui && amsSel[1] === si ? null : [ui, si]; renderAms(); };
+      g.append(b);
+    });
+    if (amsSel && amsSel[0] === ui) u.append(pickerFor(ui, amsSel[1]));
+    const rm = u.querySelector("[data-rm]");
+    if (rm) rm.onclick = () => { ams.splice(ui, 1); ams.forEach((x, i) => x.u = UNITS[i]); amsSel = null; setAmsDirty(); renderAms(); };
+    box.append(u);
+  });
+  $("amsAdd").disabled = ams.length >= 4;
+}
+function pickerFor(ui, si) {
+  const s = ams[ui].slots[si], p = document.createElement("div"); p.className = "picker";
+  let html = "";
+  for (const [type, list] of Object.entries(BAMBU_COLORS)) html += "<h4>" + type + '</h4><div class="chips">' + list.map(([n, c]) => '<button class="chip' + (s && s.c.toLowerCase() === c.toLowerCase() ? " sel" : "") + '" style="background:' + c + '" data-c="' + c + '" data-n="' + type + " · " + n + '" title="' + n + '"></button>').join("") + "</div>";
+  html += '<div class="pickfoot"><span class="pname">' + (s ? (s.n || s.c) : "Choisis le filament de l'emplacement " + ams[ui].u + (si + 1)) + '</span><label class="sub" style="display:flex;align-items:center;gap:8px;font-size:13px">Autre couleur <input type="color" value="' + (s ? s.c : "#ffffff") + '"></label><button class="btn sm" data-empty>Emplacement vide</button><button class="btn sm main" data-ok>OK</button></div>';
+  p.innerHTML = html;
+  const set = (c, n) => { ams[ui].slots[si] = { c, n }; setAmsDirty(); };
+  p.querySelectorAll(".chip").forEach(ch => {
+    ch.onmouseenter = () => { p.querySelector(".pname").textContent = ch.dataset.n; };
+    ch.onclick = () => { set(ch.dataset.c, ch.dataset.n); amsSel = si < 3 ? [ui, si + 1] : null; renderAms(); };
+  });
+  p.querySelector("input[type=color]").onchange = e => { set(e.target.value, BAMBU_NAME[e.target.value.toLowerCase()] || "Couleur libre " + e.target.value.toUpperCase()); renderAms(); };
+  p.querySelector("[data-empty]").onclick = () => { ams[ui].slots[si] = null; setAmsDirty(); amsSel = null; renderAms(); };
+  p.querySelector("[data-ok]").onclick = () => { amsSel = null; renderAms(); };
+  return p;
+}
+$("amsAdd").onclick = () => { if (ams.length < 4) { ams.push({ u: UNITS[ams.length], slots: [null, null, null, null] }); amsSel = [ams.length - 1, 0]; setAmsDirty(); renderAms(); } };
+$("amsSave").onclick = async () => {
+  $("amsSave").disabled = true; msg("amsMsg", "Enregistrement…");
+  const { data, error } = await sb.auth.updateUser({ data: { ams } });
+  if (error) { $("amsSave").disabled = false; return msg("amsMsg", frErr(error), "err"); }
+  user = data.user; amsDirty = false; msg("amsMsg", "Ton AMS est enregistré. Dans l'atelier, clique sur « Utiliser mon AMS » à l'étape des couleurs.", "ok"); toast("AMS enregistré.");
+};
+window.addEventListener("beforeunload", e => { if (amsDirty) { e.preventDefault(); e.returnValue = ""; } });
+
 // onglets
 function tab(t) {
-  $("tModels").classList.toggle("on", t === "models"); $("tSettings").classList.toggle("on", t === "settings");
-  $("modelsPane").classList.toggle("hidden", t !== "models"); $("settingsPane").classList.toggle("hidden", t !== "settings");
-  history.replaceState(null, "", t === "settings" ? "#parametres" : pageUrl() + location.search);
+  for (const [b, p, n] of [["tModels", "modelsPane", "models"], ["tAms", "amsPane", "ams"], ["tSettings", "settingsPane", "settings"]]) { $(b).classList.toggle("on", t === n); $(p).classList.toggle("hidden", t !== n); }
+  if (t === "ams" && !amsDirty) amsFromMeta();
+  history.replaceState(null, "", t === "settings" ? "#parametres" : t === "ams" ? "#ams" : pageUrl() + location.search);
 }
-$("tModels").onclick = () => tab("models"); $("tSettings").onclick = () => tab("settings");
+$("tModels").onclick = () => tab("models"); $("tAms").onclick = () => tab("ams"); $("tSettings").onclick = () => tab("settings");
 document.querySelectorAll(".settings .side button").forEach(b => b.onclick = () => {
   document.querySelectorAll(".settings .side button").forEach(x => x.classList.toggle("on", x === b));
   ["sProfile", "sSecurity", "sDanger"].forEach(id => $(id).classList.toggle("hidden", id !== b.dataset.s));
 });
 $("userBtn").onclick = () => { const d = $("userDrop"); d.classList.toggle("hidden"); $("userBtn").setAttribute("aria-expanded", String(!d.classList.contains("hidden"))); };
 document.querySelector('[data-go="settings"]').onclick = () => { $("userDrop").classList.add("hidden"); if (user) tab("settings"); };
+document.querySelector('[data-go="ams"]').onclick = e => { e.preventDefault(); $("userDrop").classList.add("hidden"); if (user) tab("ams"); };
 
 // paramètres
 $("setPseudoBtn").onclick = async () => {
@@ -603,7 +698,7 @@ function enterHome() {
   if (recovering) return;
   show("homeView"); renderUser();
   if (!homeLoaded) { homeLoaded = true; loadModels(); }
-  if (location.hash === "#parametres") tab("settings");
+  if (location.hash === "#parametres") tab("settings"); else if (location.hash === "#ams") tab("ams");
 }
 function enterAuth() { homeLoaded = false; models = []; show("authView"); }
 
