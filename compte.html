@@ -161,19 +161,29 @@
 
   .amshead{display:flex;gap:20px;align-items:flex-start;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap}
   .amshead .sub{max-width:62ch}
-  .unit{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:16px}
-  .unit .uh{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .unit{margin-bottom:22px}
+  .unit .uh{display:flex;align-items:center;gap:10px;margin-bottom:10px}
   .unit .uh b{font-size:15px}
   .unit .uh .spacer{flex:1}
-  .slots4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-  .slotc{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--bg);cursor:pointer;text-align:left;font:inherit;color:inherit}
-  .slotc:hover{border-color:var(--line2)}
-  .slotc.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
-  .slotc .spool{aspect-ratio:1;width:100%;max-width:96px;align-self:center;border-radius:50%;display:grid;place-items:center;position:relative;border:1px solid #0000001f}
-  .slotc .spool::after{content:"";width:30%;aspect-ratio:1;border-radius:50%;background:var(--bg);border:1px solid #0000001f}
-  .slotc.empty .spool{background:repeating-linear-gradient(45deg,var(--line) 0 6px,transparent 6px 12px)}
-  .slotc .sl{font-weight:800;font-size:13px;font-variant-numeric:tabular-nums}
-  .slotc .sn{font-size:12.5px;color:var(--muted);min-height:2.6em;line-height:1.3}
+  /* l'AMS : corps gris anthracite, capot fumé, 4 baies */
+  .amsdev{position:relative;border-radius:22px;padding:14px 14px 0;background:linear-gradient(180deg,#4a4e57 0%,#2c2f35 9%,#24262b 100%);box-shadow:0 1px 0 #ffffff26 inset,0 -2px 0 #0000004d inset,0 24px 50px -18px #000a,0 2px 6px #0004}
+  .amsdev::before{content:"";position:absolute;left:14px;right:14px;top:8px;height:5px;border-radius:3px;background:#1a1c20;box-shadow:0 1px 0 #ffffff14}
+  .lid{position:relative;border-radius:14px 14px 6px 6px;padding:16px 14px 14px;background:linear-gradient(180deg,#14161a 0%,#0c0d10 100%);box-shadow:0 0 0 1px #000 inset,0 2px 10px #000c inset}
+  .lid::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(115deg,#ffffff1f 0%,#ffffff08 28%,transparent 40%,transparent 70%,#ffffff0d 100%)}
+  .bays{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;position:relative}
+  .bay{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 6px 8px;border-radius:12px;background:radial-gradient(120% 90% at 50% 40%,#1d2025 0%,#121418 70%);box-shadow:0 0 0 1px #ffffff0d inset;transition:box-shadow .15s,transform .15s}
+  .bay:hover{box-shadow:0 0 0 1px #ffffff2e inset}
+  .bay:focus-visible{outline:2px solid #5A78FF;outline-offset:2px}
+  .bay.on{box-shadow:0 0 0 2px #5A78FF inset,0 0 24px #5A78FF33}
+  .bay svg{width:100%;max-width:150px;display:block;filter:drop-shadow(0 6px 10px #000a);transition:transform .2s}
+  .bay:hover svg{transform:translateY(-2px) rotate(-6deg)}
+  .bay .bn{font-size:11.5px;color:#C8CDD6;text-align:center;line-height:1.25;min-height:2.5em;max-width:100%;overflow:hidden}
+  .front{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:12px 14px 14px}
+  .front span{display:flex;align-items:center;justify-content:center;gap:7px;font:800 12px var(--ui);letter-spacing:.06em;color:#9aa1ad;font-variant-numeric:tabular-nums}
+  .front i{width:7px;height:7px;border-radius:50%;background:#3a3e46;box-shadow:0 0 0 1px #0006}
+  .front i.lit{background:#4CD964;box-shadow:0 0 8px #4CD964,0 0 0 1px #0006}
+  .brandtag{position:absolute;right:26px;bottom:14px;font:800 10px var(--ui);letter-spacing:.3em;color:#ffffff2e}
+  @media (max-width:700px){.bays,.front{grid-template-columns:repeat(2,1fr)}.front{display:none}}
   .picker{background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:16px;margin-top:14px;box-shadow:0 14px 40px #00000014}
   .picker h4{margin:12px 0 6px;font-size:12.5px;color:var(--muted);font-weight:600}
   .picker h4:first-of-type{margin-top:0}
@@ -575,20 +585,42 @@ function amsFromMeta() {
   amsSel = null; amsDirty = false; renderAms();
 }
 function setAmsDirty() { amsDirty = true; $("amsSave").disabled = false; msg("amsMsg"); }
+// une bobine vue de face : flasques sombres, filament enroulé (avec reflets), moyeu à rayons
+function spoolSVG(col) {
+  const id = "g" + Math.random().toString(36).slice(2, 8);
+  if (!col) return `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="47" fill="#1a1c20" stroke="#3a3e46" stroke-width="1.5" stroke-dasharray="4 4"/><circle cx="50" cy="50" r="16" fill="#23262c" stroke="#3a3e46"/><circle cx="50" cy="50" r="6" fill="#121418"/><path d="M50 40v20M40 50h20" stroke="#6b7280" stroke-width="2.4" stroke-linecap="round" transform="translate(0 0)" opacity=".0"/></svg>`;
+  let rings = ""; for (let r = 21; r < 44; r += 2.2) rings += `<circle cx="50" cy="50" r="${r.toFixed(1)}" fill="none" stroke="#000" stroke-opacity=".07" stroke-width=".6"/>`;
+  return `<svg viewBox="0 0 100 100" aria-hidden="true"><defs>
+    <radialGradient id="${id}s" cx="50%" cy="50%" r="50%"><stop offset="38%" stop-color="#000" stop-opacity=".28"/><stop offset="55%" stop-color="#000" stop-opacity="0"/><stop offset="92%" stop-color="#000" stop-opacity=".05"/><stop offset="100%" stop-color="#000" stop-opacity=".35"/></radialGradient>
+    <linearGradient id="${id}h" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".38"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".18"/></linearGradient>
+    <linearGradient id="${id}f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3b3f47"/><stop offset="1" stop-color="#17191d"/></linearGradient></defs>
+    <circle cx="50" cy="50" r="48" fill="url(#${id}f)"/><circle cx="50" cy="50" r="48" fill="none" stroke="#ffffff22" stroke-width=".8"/>
+    <circle cx="50" cy="50" r="44.5" fill="${col}"/>${rings}
+    <circle cx="50" cy="50" r="44.5" fill="url(#${id}s)"/><circle cx="50" cy="50" r="44.5" fill="url(#${id}h)"/>
+    <circle cx="50" cy="50" r="19" fill="#1c1e23"/><circle cx="50" cy="50" r="19" fill="none" stroke="#ffffff1c"/>
+    <g fill="#0f1013">${[0, 120, 240].map(a => `<path d="M50 50 L${(50 + 15 * Math.cos((a - 25) * Math.PI / 180)).toFixed(1)} ${(50 + 15 * Math.sin((a - 25) * Math.PI / 180)).toFixed(1)} A15 15 0 0 1 ${(50 + 15 * Math.cos((a + 25) * Math.PI / 180)).toFixed(1)} ${(50 + 15 * Math.sin((a + 25) * Math.PI / 180)).toFixed(1)}Z" opacity=".9"/>`).join("")}</g>
+    <circle cx="50" cy="50" r="8.5" fill="#2a2d33"/><circle cx="50" cy="50" r="5" fill="#0b0c0e"/>
+    <path d="M24 28 A34 34 0 0 1 46 16" stroke="#fff" stroke-opacity=".45" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>`;
+}
 function renderAms() {
   const box = $("amsUnits"); box.innerHTML = "";
   ams.forEach((unit, ui) => {
     const u = document.createElement("div"); u.className = "unit";
-    u.innerHTML = '<div class="uh"><b>AMS ' + unit.u + '</b><span class="sub" style="font-size:13px">' + unit.slots.filter(Boolean).length + ' / 4 emplacements remplis</span><span class="spacer"></span>' +
-      (ams.length > 1 ? '<button class="btn sm danger" data-rm>Retirer cet AMS</button>' : "") + '</div><div class="slots4"></div>';
-    const g = u.querySelector(".slots4");
+    const n = unit.slots.filter(Boolean).length;
+    u.innerHTML = '<div class="uh"><b>AMS ' + unit.u + '</b><span class="sub" style="font-size:13px">' + n + ' / 4 emplacements remplis</span><span class="spacer"></span>' +
+      (ams.length > 1 ? '<button class="btn sm danger" data-rm>Retirer cet AMS</button>' : "") + '</div>' +
+      '<div class="amsdev"><div class="lid"><div class="bays"></div></div><div class="front"></div><span class="brandtag">AMS ' + unit.u + '</span></div>';
+    const g = u.querySelector(".bays"), fr = u.querySelector(".front");
     unit.slots.forEach((s, si) => {
       const b = document.createElement("button"); const id = unit.u + (si + 1);
-      b.className = "slotc" + (s ? "" : " empty") + (amsSel && amsSel[0] === ui && amsSel[1] === si ? " on" : "");
-      b.innerHTML = '<span class="spool"' + (s ? ' style="background:' + s.c + '"' : "") + '></span><span class="sl">' + id + '</span><span class="sn"></span>';
-      b.querySelector(".sn").textContent = s ? (s.n || s.c.toUpperCase()) : "Vide, clique pour choisir";
+      b.className = "bay" + (amsSel && amsSel[0] === ui && amsSel[1] === si ? " on" : "");
+      b.setAttribute("aria-label", "Emplacement " + id + " : " + (s ? (s.n || s.c) : "vide"));
+      b.innerHTML = spoolSVG(s && s.c) + '<span class="bn"></span>';
+      b.querySelector(".bn").textContent = s ? (s.n ? s.n.replace(/^PLA Basic · /, "") : s.c.toUpperCase()) : "Vide";
+      if (s && s.n) b.querySelector(".bn").title = s.n;
       b.onclick = () => { amsSel = amsSel && amsSel[0] === ui && amsSel[1] === si ? null : [ui, si]; renderAms(); };
       g.append(b);
+      const f = document.createElement("span"); f.innerHTML = '<i class="' + (s ? "lit" : "") + '"></i>' + id; fr.append(f);
     });
     if (amsSel && amsSel[0] === ui) u.append(pickerFor(ui, amsSel[1]));
     const rm = u.querySelector("[data-rm]");
