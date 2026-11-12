@@ -202,6 +202,21 @@
   .pickfoot .pname{flex:1;font-size:13px;font-weight:600;min-width:160px}
   .pickfoot input[type=color]{width:38px;height:32px;border:1px solid var(--line2);border-radius:8px;padding:2px;background:var(--panel)}
   @media (max-width:700px){.slots4{grid-template-columns:repeat(2,1fr)}}
+  .fp-top{display:flex;gap:8px;margin-bottom:10px;position:sticky;top:-12px;background:inherit;padding-top:2px;z-index:1}
+  .fp-top select{flex:none;max-width:48%;background:var(--panel);border:1px solid var(--line2);border-radius:8px;padding:6px 8px;font:inherit;font-size:12.5px;color:var(--ink)}
+  .fp-top input{flex:1;min-width:0;background:var(--panel);border:1px solid var(--line2);border-radius:8px;padding:6px 9px;font:inherit;font-size:12.5px;color:var(--ink)}
+  .fp-list h4{margin:12px 0 6px;font-size:12px;font-weight:650;color:var(--muted)}
+  .fp-list h4:first-child{margin-top:2px}
+  .fchips{display:flex;flex-wrap:wrap;gap:6px}
+  .fchip{width:26px;height:26px;border-radius:50%;border:1px solid #0000002e;cursor:pointer;padding:0;background:var(--c)}
+  .fchip:hover{transform:scale(1.12)}
+  .fchip.sel{outline:2px solid var(--ink);outline-offset:2px}
+  .fchip.tr{background:linear-gradient(135deg,var(--c) 0 50%,color-mix(in srgb,var(--c) 45%,#fff) 50%)}
+  .fchip.mu{background:conic-gradient(var(--c),#f2c94c,#56ccf2,#bb6bd9,var(--c))}
+  .fp-msg{font-size:12.5px;color:var(--muted);margin:8px 0}
+
+  .picker .fpbox{max-height:420px;overflow:auto;padding-right:4px}
+  .picker .fp-top{top:0}
   footer{border-top:1px solid var(--line);padding:22px 0 30px;font-size:12.5px;color:var(--muted)}
   footer p{margin:0}
   .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:var(--panel);padding:11px 16px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:.2s;z-index:50}
@@ -387,7 +402,7 @@
   </div>
 </main>
 
-<footer><div class="wrap"><p>Atelier Coque · "PS5 Slim" (<a href="https://skfb.ly/oMrsZ" rel="nofollow">https://skfb.ly/oMrsZ</a>) by rtql8d is licensed under Creative Commons Attribution (<a href="http://creativecommons.org/licenses/by/4.0/" rel="nofollow">http://creativecommons.org/licenses/by/4.0/</a>)</p></div></footer>
+<footer><div class="wrap"><p>Atelier Coque · "PS5 Slim" (<a href="https://skfb.ly/oMrsZ" rel="nofollow">https://skfb.ly/oMrsZ</a>) by rtql8d is licensed under Creative Commons Attribution (<a href="http://creativecommons.org/licenses/by/4.0/" rel="nofollow">http://creativecommons.org/licenses/by/4.0/</a>) · Catalogue de filaments : <a href="https://tigertag.io" rel="nofollow">TigerTag</a></p></div></footer>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script type="module">
@@ -595,6 +610,70 @@ async function remove(m) {
 // ---------- Mon AMS ----------
 const BAMBU_COLORS = {"PLA Basic":[["Orange","#FF6A13"],["Orange citrouille","#FF9016"],["Bleu gris","#5B6579"],["Bleu cobalt","#0056B8"],["Turquoise","#00B1B7"],["Cyan","#0086D6"],["Bleu","#0A2989"],["Gris","#8E9089"],["Argenté","#A6A9AA"],["Gris clair","#D1D3D5"],["Gris foncé","#545454"],["Vert gui","#3F8E43"],["Vert vif","#BECF00"],["Vert bambou","#00AE42"],["Noir","#000000"],["Marron","#9D432C"],["Marron cacao","#6F5034"],["Beige","#F7E6DE"],["Rose","#F55A74"],["Violet indigo","#482960"],["Violet","#5E43B7"],["Magenta","#EC008C"],["Rouge","#C12E1F"],["Rouge marron","#9D2235"],["Rose vif","#F5547C"],["Blanc de jade","#FFFFFF"],["Jaune","#F4EE2A"],["Jaune tournesol","#FEC600"],["Bronze","#847D48"],["Doré","#E4BD68"]],"PLA Matte":[["Mandarine","#F99963"],["Bleu ciel","#56B7E6"],["Bleu marine","#0078BF"],["Bleu glacier","#A3D8E1"],["Bleu foncé","#042F56"],["Gris nardo","#757575"],["Gris cendré","#9B9EA0"],["Vert pomme","#C2E189"],["Vert herbacé","#61C680"],["Vert foncé","#68724D"],["Anthracite","#000000"],["Chocolat noir","#4D3324"],["Marron latte","#D3B7A7"],["Marron foncé","#7D6556"],["Caramel","#AE835B"],["Rose sakura","#E8AFCF"],["Violet lilas","#AE96D4"],["Rouge écarlate","#DE4343"],["Terre cuite","#B15533"],["Prune","#950051"],["Rouge foncé","#BB3D43"],["Blanc ivoire","#FFFFFF"],["Blanc os","#CBC6B8"],["Jaune citron","#F7D959"],["Brun clair du désert","#E8DBB7"]],"PETG HF":[["Orange","#F75403"],["Bleu","#002E96"],["Bleu lac","#1F79E5"],["Gris","#ADB1B2"],["Gris foncé","#515151"],["Vert","#00AE42"],["Vert citron","#6EE53C"],["Vert forêt","#39541A"],["Noir","#000000"],["Marron cacahuète","#875718"],["Rouge","#BC0900"],["Blanc","#FFFFFF"],["Jaune","#FFD00B"],["Crème","#F9DFB9"]],"PETG Basic":[["Black","#000000"],["White","#FFFFFF"],["Gray","#7F7E83"],["Yellow","#FCE300"],["Red","#D6001C"],["Reflex Blue","#001489"],["Dark Brown","#4F2C1D"],["Green","#009639"],["Orange","#FF671F"],["Pine Green","#034638"],["Navy Blue","#0086D6"],["Misty Blue","#688197"],["Dark Beige","#DBC8B6"],["Purple","#8A75D1"],["Sunflower Yellow","#FFB81C"],["Bright Green","#97D700"],["Hot Pink","#F277C6"]],"PLA Silk+":[["Bleu layette","#A8C6EE"],["Bleu","#008BDA"],["Gris titane","#5F6367"],["Argenté","#C8C8C8"],["Vert bonbon","#018814"],["Menthe","#96DCB9"],["Violet","#8671CB"],["Rouge bonbon","#D02727"],["Doré rose","#BA9594"],["Rose","#F7ADA6"],["Blanc","#FFFFFF"],["Champagne","#F3CFB2"],["Doré","#F4A925"]]};
 const BAMBU_NAME = {}; for (const [t, l] of Object.entries(BAMBU_COLORS)) for (const [n, h] of l) BAMBU_NAME[h.toLowerCase()] ??= t + " · " + n;
+// ===== Sélecteur de filament multi-marques (commun à l'atelier et à Mon compte) =====
+// Données : Bambu Lab (gamme intégrée) + catalogue des marques courantes (filaments.json, d'après TigerTag),
+// chargé seulement à la première ouverture d'une autre marque.
+let FIL_DB = null, FIL_DB_P = null;
+function loadFilaments() {
+  if (!FIL_DB_P) FIL_DB_P = fetch("filaments.json").then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(j => (FIL_DB = j.brands)).catch(e => { FIL_DB_P = null; throw e; });
+  return FIL_DB_P;
+}
+// noms des filaments choisis (pour afficher « Polymaker · PolyTerra PLA · Charcoal Black » à côté d'une couleur)
+const FIL_NAMES = (() => { try { return JSON.parse(localStorage.getItem("atelier-noms-filaments") || "{}"); } catch (e) { return {}; } })();
+function rememberFilName(hex, name) {
+  if (!hex || !name) return; FIL_NAMES[hex.toLowerCase()] = name;
+  try { const k = Object.keys(FIL_NAMES); if (k.length > 400) delete FIL_NAMES[k[0]]; localStorage.setItem("atelier-noms-filaments", JSON.stringify(FIL_NAMES)); } catch (e) { }
+}
+const filEsc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+function filChip(hex, label, cur, fl) {
+  return '<button type="button" class="fchip' + (cur && hex.toLowerCase() === cur.toLowerCase() ? " sel" : "") + (fl && fl.includes("t") ? " tr" : "") + (fl && fl.includes("m") ? " mu" : "") +
+    '" style="--c:' + hex + '" data-c="' + hex + '" data-n="' + filEsc(label) + '" title="' + filEsc(label) + '"></button>';
+}
+// rend le sélecteur dans `box` ; opts : { current, onPick(hex, nom), onHover(nom) }
+function renderFilPicker(box, opts) {
+  let brand = (() => { try { return localStorage.getItem("atelier-marque") || "Bambu Lab"; } catch (e) { return "Bambu Lab"; } })();
+  box.innerHTML = '<div class="fp-top"><select class="fp-brand" aria-label="Marque"><option>Bambu Lab</option></select><input type="search" class="fp-q" placeholder="Rechercher (ex. noir mat, galaxy…)" aria-label="Rechercher un filament"></div><div class="fp-list"></div>';
+  const sel = box.querySelector(".fp-brand"), q = box.querySelector(".fp-q"), list = box.querySelector(".fp-list");
+  const fill = () => { if (FIL_DB) for (const b of Object.keys(FIL_DB)) if (![...sel.options].some(o => o.value === b)) sel.add(new Option(b + " (" + FIL_DB[b].length + ")", b)); sel.value = brand; };
+  const wire = () => list.querySelectorAll(".fchip").forEach(ch => {
+    ch.onmouseenter = () => opts.onHover && opts.onHover(ch.dataset.n);
+    ch.onclick = () => { rememberFilName(ch.dataset.c, ch.dataset.n); opts.onPick(ch.dataset.c, ch.dataset.n); };
+  });
+  const groupsOf = b => {
+    if (b === "Bambu Lab") return Object.entries(BAMBU_COLORS).map(([t, l]) => [t, l.map(([n, c]) => [c, "Bambu Lab · " + t + " · " + n])]);
+    const g = new Map();
+    for (const [mat, line, name, hex, fl] of FIL_DB[b] || []) {
+      const k = line && !line.toLowerCase().includes(mat.toLowerCase()) ? mat + " · " + line : (line || mat);
+      if (!g.has(k)) g.set(k, []);
+      g.get(k).push([hex, b + " · " + (line || mat) + " · " + name, fl]);
+    }
+    return [...g.entries()];
+  };
+  const render = () => {
+    const term = q.value.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+    if (brand !== "Bambu Lab" && !FIL_DB) { list.innerHTML = '<p class="fp-msg">Chargement du catalogue…</p>'; loadFilaments().then(() => { fill(); render(); }).catch(() => { list.innerHTML = '<p class="fp-msg">Catalogue indisponible pour le moment.</p>'; }); return; }
+    let html = "";
+    if (term.length >= 2) {
+      // recherche dans toutes les marques (catalogue chargé à la demande)
+      const words = term.split(/\s+/), hits = [];
+      const match = s => { const t = s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); return words.every(w => t.includes(w)); };
+      for (const [, items] of groupsOf("Bambu Lab")) for (const it of items) { if (match(it[1])) hits.push(it); }
+      if (FIL_DB) {
+        for (const b of Object.keys(FIL_DB)) for (const [, items] of groupsOf(b)) for (const it of items) { if (match(it[1])) hits.push(it); }
+      } else {
+        loadFilaments().then(() => { fill(); render(); }).catch(() => { });     // relance la recherche une fois le catalogue chargé
+      }
+      html = hits.length ? '<h4>' + hits.length + ' résultat' + (hits.length > 1 ? "s" : "") + (hits.length > 160 ? " (160 premiers)" : "") + '</h4><div class="fchips">' + hits.slice(0, 160).map(([c, n, fl]) => filChip(c, n, opts.current, fl)).join("") + "</div>" : '<p class="fp-msg">Aucun filament trouvé.</p>';
+    } else for (const [g, items] of groupsOf(brand)) html += "<h4>" + filEsc(g) + '</h4><div class="fchips">' + items.map(([c, n, fl]) => filChip(c, n, opts.current, fl)).join("") + "</div>";
+    list.innerHTML = html; wire();
+  };
+  sel.onchange = () => { brand = sel.value; try { localStorage.setItem("atelier-marque", brand); } catch (e) { } q.value = ""; render(); };
+  let qt = 0; q.oninput = () => { clearTimeout(qt); qt = setTimeout(render, 120); };
+  if (FIL_DB) fill(); else loadFilaments().then(fill).catch(() => { });
+  if (!FIL_DB && brand !== "Bambu Lab") { sel.add(new Option(brand, brand)); sel.value = brand; }
+  render();
+}
+
 let ams = [], amsSel = null, amsDirty = false;      // ams : [{u:"A", slots:[{c,n}|null ×4]}]
 const UNITS = "ABCD";
 function amsFromMeta() {
@@ -634,7 +713,9 @@ function renderAms() {
       b.className = "bay" + (amsSel && amsSel[0] === ui && amsSel[1] === si ? " on" : "");
       b.setAttribute("aria-label", "Emplacement " + id + " : " + (s ? (s.n || s.c) : "vide"));
       b.innerHTML = spoolSVG(s && s.c) + '<span class="bn"></span>';
-      b.querySelector(".bn").textContent = s ? (s.n ? s.n.replace(/^PLA Basic · /, "") : s.c.toUpperCase()) : "Vide";
+      // nom court sous la bobine (la couleur), marque en petit si ce n'est pas du Bambu
+      const parts = s && s.n ? s.n.split(" · ") : [], brandOf = parts.length > 2 && parts[0] !== "Bambu Lab" ? parts[0] : "";
+      b.querySelector(".bn").innerHTML = s ? filEsc(parts.length ? parts[parts.length - 1] : s.c.toUpperCase()) + (brandOf ? '<small style="display:block;opacity:.65">' + filEsc(brandOf) + "</small>" : "") : "Vide";
       if (s && s.n) b.querySelector(".bn").title = s.n;
       b.onclick = () => { amsSel = amsSel && amsSel[0] === ui && amsSel[1] === si ? null : [ui, si]; renderAms(); };
       g.append(b);
@@ -649,16 +730,12 @@ function renderAms() {
 }
 function pickerFor(ui, si) {
   const s = ams[ui].slots[si], p = document.createElement("div"); p.className = "picker";
-  let html = "";
-  for (const [type, list] of Object.entries(BAMBU_COLORS)) html += "<h4>" + type + '</h4><div class="chips">' + list.map(([n, c]) => '<button class="chip' + (s && s.c.toLowerCase() === c.toLowerCase() ? " sel" : "") + '" style="background:' + c + '" data-c="' + c + '" data-n="' + type + " · " + n + '" title="' + n + '"></button>').join("") + "</div>";
-  html += '<div class="pickfoot"><span class="pname">' + (s ? (s.n || s.c) : "Choisis le filament de l'emplacement " + ams[ui].u + (si + 1)) + '</span><label class="sub" style="display:flex;align-items:center;gap:8px;font-size:13px">Autre couleur <input type="color" value="' + (s ? s.c : "#ffffff") + '"></label><button class="btn sm" data-empty>Emplacement vide</button><button class="btn sm main" data-ok>OK</button></div>';
-  p.innerHTML = html;
+  p.innerHTML = '<div class="fpbox"></div><div class="pickfoot"><span class="pname"></span><label class="sub" style="display:flex;align-items:center;gap:8px;font-size:13px">Autre couleur <input type="color" value="' + (s ? s.c : "#ffffff") + '"></label><button class="btn sm" data-empty>Emplacement vide</button><button class="btn sm main" data-ok>OK</button></div>';
+  p.querySelector(".pname").textContent = s ? (s.n || s.c) : "Choisis le filament de l'emplacement " + ams[ui].u + (si + 1);
   const set = (c, n) => { ams[ui].slots[si] = { c, n }; setAmsDirty(); };
-  p.querySelectorAll(".chip").forEach(ch => {
-    ch.onmouseenter = () => { p.querySelector(".pname").textContent = ch.dataset.n; };
-    ch.onclick = () => { set(ch.dataset.c, ch.dataset.n); amsSel = si < 3 ? [ui, si + 1] : null; renderAms(); };
-  });
-  p.querySelector("input[type=color]").onchange = e => { set(e.target.value, BAMBU_NAME[e.target.value.toLowerCase()] || "Couleur libre " + e.target.value.toUpperCase()); renderAms(); };
+  renderFilPicker(p.querySelector(".fpbox"), { current: s && s.c, onHover: n => { p.querySelector(".pname").textContent = n; },
+    onPick: (c, n) => { set(c, n); amsSel = si < 3 ? [ui, si + 1] : null; renderAms(); } });
+  p.querySelector("input[type=color]").onchange = e => { set(e.target.value, BAMBU_NAME[e.target.value.toLowerCase()] || FIL_NAMES[e.target.value.toLowerCase()] || "Couleur libre " + e.target.value.toUpperCase()); renderAms(); };
   p.querySelector("[data-empty]").onclick = () => { ams[ui].slots[si] = null; setAmsDirty(); amsSel = null; renderAms(); };
   p.querySelector("[data-ok]").onclick = () => { amsSel = null; renderAms(); };
   return p;

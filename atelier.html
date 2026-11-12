@@ -133,7 +133,20 @@
   .fil{display:flex;align-items:center;gap:6px;font-size:12px;border:1px solid var(--line);border-radius:999px;padding:3px 10px 3px 4px;font-variant-numeric:tabular-nums}
   .fil i{width:16px;height:16px;border-radius:50%;display:inline-block;border:1px solid #15171c26}
 
-  .pop{position:fixed;z-index:50;width:324px;max-height:430px;overflow:auto;background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:12px;box-shadow:0 20px 50px #15171c33}
+  .pop{position:fixed;z-index:50;width:min(380px,calc(100vw - 16px));max-height:min(500px,calc(100vh - 16px));overflow:auto;background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:12px;box-shadow:0 20px 50px #15171c33}
+  .fp-top{display:flex;gap:8px;margin-bottom:10px;position:sticky;top:-12px;background:inherit;padding-top:2px;z-index:1}
+  .fp-top select{flex:none;max-width:48%;background:var(--panel);border:1px solid var(--line2);border-radius:8px;padding:6px 8px;font:inherit;font-size:12.5px;color:var(--ink)}
+  .fp-top input{flex:1;min-width:0;background:var(--panel);border:1px solid var(--line2);border-radius:8px;padding:6px 9px;font:inherit;font-size:12.5px;color:var(--ink)}
+  .fp-list h4{margin:12px 0 6px;font-size:12px;font-weight:650;color:var(--muted)}
+  .fp-list h4:first-child{margin-top:2px}
+  .fchips{display:flex;flex-wrap:wrap;gap:6px}
+  .fchip{width:26px;height:26px;border-radius:50%;border:1px solid #0000002e;cursor:pointer;padding:0;background:var(--c)}
+  .fchip:hover{transform:scale(1.12)}
+  .fchip.sel{outline:2px solid var(--ink);outline-offset:2px}
+  .fchip.tr{background:linear-gradient(135deg,var(--c) 0 50%,color-mix(in srgb,var(--c) 45%,#fff) 50%)}
+  .fchip.mu{background:conic-gradient(var(--c),#f2c94c,#56ccf2,#bb6bd9,var(--c))}
+  .fp-msg{font-size:12.5px;color:var(--muted);margin:8px 0}
+
   .pop h4{margin:12px 0 7px;font-size:12px;font-weight:650;color:var(--muted)}
   .pop h4:first-child{margin-top:0}
   .chips{display:grid;grid-template-columns:repeat(9,1fr);gap:5px}
@@ -440,7 +453,7 @@
   </div>
 </main>
 </div>
-<footer class="credits">"PS5 Slim" (<a href="https://skfb.ly/oMrsZ" target="_blank" rel="nofollow">https://skfb.ly/oMrsZ</a>) by rtql8d is licensed under Creative Commons Attribution (<a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="nofollow">http://creativecommons.org/licenses/by/4.0/</a>)</footer>
+<footer class="credits">"PS5 Slim" (<a href="https://skfb.ly/oMrsZ" target="_blank" rel="nofollow">https://skfb.ly/oMrsZ</a>) by rtql8d is licensed under Creative Commons Attribution (<a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="nofollow">http://creativecommons.org/licenses/by/4.0/</a>) · Catalogue de filaments : <a href="https://tigertag.io" target="_blank" rel="nofollow">TigerTag</a></footer>
 <div class="pop hidden" id="pop"></div>
 <div class="modal hidden" id="gallery" role="dialog" aria-modal="true" aria-labelledby="galleryTitle">
   <div class="sheet">
@@ -905,7 +918,71 @@ for (const [type, list] of Object.entries(BAMBU_COLORS)) for (const [name, h] of
   const k = h.toLowerCase(); if (!BAMBU_BY_HEX[k]) BAMBU_BY_HEX[k] = type + " · " + name;
 }
 let amsUser = null;      // compte connecté (pour « Mon AMS »), renseigné par la partie Compte
-const bambuName = h => BAMBU_BY_HEX[(h || "").toLowerCase()] || "";
+// ===== Sélecteur de filament multi-marques (commun à l'atelier et à Mon compte) =====
+// Données : Bambu Lab (gamme intégrée) + catalogue des marques courantes (filaments.json, d'après TigerTag),
+// chargé seulement à la première ouverture d'une autre marque.
+let FIL_DB = null, FIL_DB_P = null;
+function loadFilaments() {
+  if (!FIL_DB_P) FIL_DB_P = fetch("filaments.json").then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(j => (FIL_DB = j.brands)).catch(e => { FIL_DB_P = null; throw e; });
+  return FIL_DB_P;
+}
+// noms des filaments choisis (pour afficher « Polymaker · PolyTerra PLA · Charcoal Black » à côté d'une couleur)
+const FIL_NAMES = (() => { try { return JSON.parse(localStorage.getItem("atelier-noms-filaments") || "{}"); } catch (e) { return {}; } })();
+function rememberFilName(hex, name) {
+  if (!hex || !name) return; FIL_NAMES[hex.toLowerCase()] = name;
+  try { const k = Object.keys(FIL_NAMES); if (k.length > 400) delete FIL_NAMES[k[0]]; localStorage.setItem("atelier-noms-filaments", JSON.stringify(FIL_NAMES)); } catch (e) { }
+}
+const filEsc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+function filChip(hex, label, cur, fl) {
+  return '<button type="button" class="fchip' + (cur && hex.toLowerCase() === cur.toLowerCase() ? " sel" : "") + (fl && fl.includes("t") ? " tr" : "") + (fl && fl.includes("m") ? " mu" : "") +
+    '" style="--c:' + hex + '" data-c="' + hex + '" data-n="' + filEsc(label) + '" title="' + filEsc(label) + '"></button>';
+}
+// rend le sélecteur dans `box` ; opts : { current, onPick(hex, nom), onHover(nom) }
+function renderFilPicker(box, opts) {
+  let brand = (() => { try { return localStorage.getItem("atelier-marque") || "Bambu Lab"; } catch (e) { return "Bambu Lab"; } })();
+  box.innerHTML = '<div class="fp-top"><select class="fp-brand" aria-label="Marque"><option>Bambu Lab</option></select><input type="search" class="fp-q" placeholder="Rechercher (ex. noir mat, galaxy…)" aria-label="Rechercher un filament"></div><div class="fp-list"></div>';
+  const sel = box.querySelector(".fp-brand"), q = box.querySelector(".fp-q"), list = box.querySelector(".fp-list");
+  const fill = () => { if (FIL_DB) for (const b of Object.keys(FIL_DB)) if (![...sel.options].some(o => o.value === b)) sel.add(new Option(b + " (" + FIL_DB[b].length + ")", b)); sel.value = brand; };
+  const wire = () => list.querySelectorAll(".fchip").forEach(ch => {
+    ch.onmouseenter = () => opts.onHover && opts.onHover(ch.dataset.n);
+    ch.onclick = () => { rememberFilName(ch.dataset.c, ch.dataset.n); opts.onPick(ch.dataset.c, ch.dataset.n); };
+  });
+  const groupsOf = b => {
+    if (b === "Bambu Lab") return Object.entries(BAMBU_COLORS).map(([t, l]) => [t, l.map(([n, c]) => [c, "Bambu Lab · " + t + " · " + n])]);
+    const g = new Map();
+    for (const [mat, line, name, hex, fl] of FIL_DB[b] || []) {
+      const k = line && !line.toLowerCase().includes(mat.toLowerCase()) ? mat + " · " + line : (line || mat);
+      if (!g.has(k)) g.set(k, []);
+      g.get(k).push([hex, b + " · " + (line || mat) + " · " + name, fl]);
+    }
+    return [...g.entries()];
+  };
+  const render = () => {
+    const term = q.value.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+    if (brand !== "Bambu Lab" && !FIL_DB) { list.innerHTML = '<p class="fp-msg">Chargement du catalogue…</p>'; loadFilaments().then(() => { fill(); render(); }).catch(() => { list.innerHTML = '<p class="fp-msg">Catalogue indisponible pour le moment.</p>'; }); return; }
+    let html = "";
+    if (term.length >= 2) {
+      // recherche dans toutes les marques (catalogue chargé à la demande)
+      const words = term.split(/\s+/), hits = [];
+      const match = s => { const t = s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); return words.every(w => t.includes(w)); };
+      for (const [, items] of groupsOf("Bambu Lab")) for (const it of items) { if (match(it[1])) hits.push(it); }
+      if (FIL_DB) {
+        for (const b of Object.keys(FIL_DB)) for (const [, items] of groupsOf(b)) for (const it of items) { if (match(it[1])) hits.push(it); }
+      } else {
+        loadFilaments().then(() => { fill(); render(); }).catch(() => { });     // relance la recherche une fois le catalogue chargé
+      }
+      html = hits.length ? '<h4>' + hits.length + ' résultat' + (hits.length > 1 ? "s" : "") + (hits.length > 160 ? " (160 premiers)" : "") + '</h4><div class="fchips">' + hits.slice(0, 160).map(([c, n, fl]) => filChip(c, n, opts.current, fl)).join("") + "</div>" : '<p class="fp-msg">Aucun filament trouvé.</p>';
+    } else for (const [g, items] of groupsOf(brand)) html += "<h4>" + filEsc(g) + '</h4><div class="fchips">' + items.map(([c, n, fl]) => filChip(c, n, opts.current, fl)).join("") + "</div>";
+    list.innerHTML = html; wire();
+  };
+  sel.onchange = () => { brand = sel.value; try { localStorage.setItem("atelier-marque", brand); } catch (e) { } q.value = ""; render(); };
+  let qt = 0; q.oninput = () => { clearTimeout(qt); qt = setTimeout(render, 120); };
+  if (FIL_DB) fill(); else loadFilaments().then(fill).catch(() => { });
+  if (!FIL_DB && brand !== "Bambu Lab") { sel.add(new Option(brand, brand)); sel.value = brand; }
+  render();
+}
+
+const bambuName = h => BAMBU_BY_HEX[(h || "").toLowerCase()] || FIL_NAMES[(h || "").toLowerCase()] || "";
 
 // =====================================================================================
 // Géométrie : coques et cadre de travail
@@ -1138,20 +1215,13 @@ $("snap").onclick = () => {
 const pop = $("pop"); let popCb = null;
 function openPicker(anchor, current, cb) {
   popCb = cb;
-  let html = "";
-  for (const [type, list] of Object.entries(BAMBU_COLORS)) {
-    html += "<h4>" + type + '</h4><div class="chips">' + list.map(([n, c]) => '<button class="chip' + (c.toLowerCase() === current.toLowerCase() ? " sel" : "") +
-      '" style="background:' + c + '" data-c="' + c + '" data-n="' + type + " · " + n + '" title="' + n + '"></button>').join("") + "</div>";
-  }
-  html += '<div class="hovername" id="popName">' + (bambuName(current) || "Couleur libre " + current) + '</div><div class="free">Couleur libre <input type="color" id="popFree" value="' + current + '"></div>';
-  pop.innerHTML = html; pop.classList.remove("hidden");
+  pop.innerHTML = '<div class="fpbox"></div><div class="hovername" id="popName"></div><div class="free">Couleur libre <input type="color" id="popFree" value="' + current + '"></div>';
+  $("popName").textContent = bambuName(current) || "Couleur libre " + current;
+  renderFilPicker(pop.querySelector(".fpbox"), { current, onPick: c => { closePicker(); cb(c); }, onHover: n => { $("popName").textContent = n; } });
+  pop.classList.remove("hidden");
   const r = anchor.getBoundingClientRect();
-  pop.style.left = Math.min(window.innerWidth - 330, r.left) + "px";
-  pop.style.top = Math.max(8, Math.min(window.innerHeight - 430, r.bottom + 6)) + "px";
-  pop.querySelectorAll(".chip").forEach(ch => {
-    ch.onmouseenter = () => { $("popName").textContent = ch.dataset.n; };
-    ch.onclick = () => { closePicker(); cb(ch.dataset.c); };
-  });
+  pop.style.left = Math.max(8, Math.min(window.innerWidth - pop.offsetWidth - 8, r.left)) + "px";
+  pop.style.top = Math.max(8, Math.min(window.innerHeight - pop.offsetHeight - 8, r.bottom + 6)) + "px";
   $("popFree").oninput = e => cb(e.target.value);
 }
 function closePicker() { pop.classList.add("hidden"); popCb = null; }
@@ -1842,7 +1912,7 @@ function updateHistoryUI() { $("undoBtn").disabled = !H.undo.length; $("redoBtn"
 $("undoBtn").onclick = undo; $("redoBtn").onclick = redo;
 document.addEventListener("keydown", e => {
   if (!(e.metaKey || e.ctrlKey)) return;
-  const t = e.target, typing = t && (t.tagName === "INPUT" && t.type === "text" || t.tagName === "TEXTAREA");
+  const t = e.target, typing = t && (t.tagName === "INPUT" && !["range", "checkbox", "radio", "color", "file", "button"].includes(t.type) || t.tagName === "TEXTAREA" || t.tagName === "SELECT");
   if (typing) return;
   const k = e.key.toLowerCase();
   if (k === "z" && !e.shiftKey) { e.preventDefault(); undo(); }
@@ -2112,7 +2182,7 @@ function openDrop() {
 function closeDrop() { $("accDrop").classList.add("hidden"); $("accBtn").setAttribute("aria-expanded", "false"); }
 function renderAccUser() {
   const u = ACC.user;
-  $("accLbl").textContent = u ? pseudoOf(u) : "Se connecter"; setAv($("accAv"), u);
+  $("accLbl").textContent = u ? pseudoOf(u) : "Connexion"; setAv($("accAv"), u);
   $("accBtn").classList.toggle("out", !u); $("accBtn").title = u ? "Mon compte" : "";
   if (u) { setAv($("dAv"), u); $("dName").textContent = pseudoOf(u); $("dMail").textContent = u.email || ""; }
 }
