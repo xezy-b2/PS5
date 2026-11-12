@@ -184,6 +184,14 @@
   .front i.lit{background:#4CD964;box-shadow:0 0 8px #4CD964,0 0 0 1px #0006}
   .brandtag{position:absolute;right:26px;bottom:14px;font:800 10px var(--ui);letter-spacing:.3em;color:#ffffff2e}
   @media (max-width:700px){.bays,.front{grid-template-columns:repeat(2,1fr)}.front{display:none}}
+  .synchelp{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin-bottom:22px}
+  .sh-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .steps{margin:16px 0 0;padding:0;list-style:none;counter-reset:s;display:grid;gap:14px}
+  .steps li{counter-increment:s;display:grid;grid-template-columns:30px 1fr;column-gap:12px;row-gap:3px}
+  .steps li::before{content:counter(s);grid-row:span 2;width:28px;height:28px;border-radius:50%;background:var(--ink);color:var(--panel);display:grid;place-items:center;font-weight:800;font-size:13px}
+  .steps li b{font-size:14px} .steps li span{font-size:13.5px;color:var(--muted);display:block}
+  .steps li span.dl{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:4px}
+  .btn.syncing svg{animation:spin 1s linear infinite} @keyframes spin{to{transform:rotate(360deg)}}
   .picker{background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:16px;margin-top:14px;box-shadow:0 14px 40px #00000014}
   .picker h4{margin:12px 0 6px;font-size:12.5px;color:var(--muted);font-weight:600}
   .picker h4:first-of-type{margin-top:0}
@@ -327,7 +335,17 @@
       <div id="amsPane" class="hidden">
         <div class="amshead">
           <div><h2>Les filaments de ton AMS</h2><p class="sub">Indique ce qui est chargé dans chaque emplacement. Dans l'atelier, « Utiliser mon AMS » convertit tes images avec ces couleurs exactes, chacune liée à son emplacement.</p></div>
-          <div class="inrow" style="flex:none"><button class="btn" id="amsAdd">+ Ajouter un AMS</button><button class="btn main" id="amsSave" disabled>Enregistrer</button></div>
+          <div class="inrow" style="flex:none"><button class="btn accent" id="amsSync"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 0 1-15.5 6.2M3 12A9 9 0 0 1 18.5 5.8"/><path d="M18 2v4h-4M6 22v-4h4"/></svg>Synchroniser depuis l'imprimante</button><button class="btn" id="amsAdd">+ Ajouter un AMS</button><button class="btn main" id="amsSave" disabled>Enregistrer</button></div>
+        </div>
+        <div class="synchelp hidden" id="syncHelp">
+          <div class="sh-head"><h2>Synchroniser avec ton imprimante</h2><button class="iconbtn" id="syncHelpClose" aria-label="Fermer">✕</button></div>
+          <p class="sub">Un petit programme sur ton Mac lit l'AMS sur ton réseau local, en lecture seule. Ton imprimante reste en mode normal : Bambu Handy et le cloud continuent de marcher.</p>
+          <ol class="steps">
+            <li><b>Télécharge le pont AMS</b><span class="dl"><a class="btn sm main" href="outils/pont-ams-mac.zip" download>Pont AMS pour Mac (.zip)</a> <a class="sub" href="outils/atelier_ams.py" download style="font-size:12.5px">ou le script Python (Windows / Linux)</a></span></li>
+            <li><b>Ouvre-le</b><span>Double-clique sur le .zip, puis fais un <b>clic droit → Ouvrir</b> sur « Pont AMS Atelier Coque » (la première fois, macOS demande de confirmer).</span></li>
+            <li><b>Indique ton imprimante, une seule fois</b><span>Sur l'écran de l'imprimante : <b>adresse IP</b> et <b>code d'accès</b> (Réglages → Réseau), <b>numéro de série</b> (Réglages → Appareil). Ton ordinateur et l'imprimante doivent être sur le même réseau.</span></li>
+            <li><b>Laisse la fenêtre ouverte et reviens ici</b><span>Clique sur « Synchroniser depuis l'imprimante ». Si le navigateur demande l'accès aux appareils du réseau local, autorise-le. Avec Safari, si rien ne se passe, essaie avec Chrome.</span></li>
+          </ol>
         </div>
         <div id="amsUnits"></div>
         <p class="msg" id="amsMsg" role="status"></p>
@@ -609,7 +627,7 @@ function renderAms() {
     const n = unit.slots.filter(Boolean).length;
     u.innerHTML = '<div class="uh"><b>AMS ' + unit.u + '</b><span class="sub" style="font-size:13px">' + n + ' / 4 emplacements remplis</span><span class="spacer"></span>' +
       (ams.length > 1 ? '<button class="btn sm danger" data-rm>Retirer cet AMS</button>' : "") + '</div>' +
-      '<div class="amsdev"><div class="lid"><div class="bays"></div></div><div class="front"></div><span class="brandtag">AMS ' + unit.u + '</span></div>';
+      '<div class="amsdev"><div class="lid"><div class="bays"></div></div><div class="front"></div></div>';
     const g = u.querySelector(".bays"), fr = u.querySelector(".front");
     unit.slots.forEach((s, si) => {
       const b = document.createElement("button"); const id = unit.u + (si + 1);
@@ -652,6 +670,35 @@ $("amsSave").onclick = async () => {
   if (error) { $("amsSave").disabled = false; return msg("amsMsg", frErr(error), "err"); }
   user = data.user; amsDirty = false; msg("amsMsg", "Ton AMS est enregistré. Dans l'atelier, clique sur « Utiliser mon AMS » à l'étape des couleurs.", "ok"); toast("AMS enregistré.");
 };
+// synchronisation : le pont AMS (programme local) répond sur http://127.0.0.1:8765/ams
+async function fetchBridge() {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 4000);
+  try { const r = await fetch("http://127.0.0.1:8765/ams", { signal: ctl.signal, cache: "no-store", targetAddressSpace: "loopback" }); return await r.json(); }
+  finally { clearTimeout(t); }
+}
+$("amsSync").onclick = async () => {
+  const b = $("amsSync"); b.disabled = true; b.classList.add("syncing"); msg("amsMsg", "Recherche du pont AMS sur ton ordinateur…");
+  try {
+    let d = await fetchBridge();
+    // juste après le lancement, l'imprimante peut mettre quelques secondes à envoyer l'AMS
+    for (let i = 0; i < 6 && d.connected && !d.units.length; i++) { await new Promise(r => setTimeout(r, 1500)); d = await fetchBridge(); }
+    if (!d.connected) { msg("amsMsg", "Le pont AMS est lancé mais n'arrive pas à joindre l'imprimante" + (d.error ? " (" + d.error + ")" : "") + ". Vérifie l'adresse IP et le code d'accès (relance le pont avec --reset pour les changer).", "err"); return; }
+    if (!d.units.length) { msg("amsMsg", "Imprimante connectée, mais aucun AMS reçu pour l'instant. Réessaie dans quelques secondes.", "err"); return; }
+    // nom : d'abord dans la gamme annoncée par l'imprimante (bobines Bambu à puce), sinon par la couleur
+    const nameOf = s => { const g = BAMBU_COLORS[s.brand]; const hit = g && g.find(([, h]) => h.toLowerCase() === s.c.toLowerCase());
+      return hit ? s.brand + " · " + hit[0] : (BAMBU_NAME[s.c.toLowerCase()] && (!s.type || BAMBU_NAME[s.c.toLowerCase()].startsWith(s.type)) ? BAMBU_NAME[s.c.toLowerCase()] : [s.brand || s.type, s.c.toUpperCase()].filter(Boolean).join(" · ")); };
+    ams = d.units.map(u => ({ u: u.u, slots: u.slots.map(s => s ? { c: s.c, n: nameOf(s) } : null) }));
+    amsSel = null; renderAms(); $("syncHelp").classList.add("hidden");
+    const { data, error } = await sb.auth.updateUser({ data: { ams } });
+    if (error) { setAmsDirty(); return msg("amsMsg", "AMS lu, mais pas enregistré : " + frErr(error), "err"); }
+    user = data.user; amsDirty = false; $("amsSave").disabled = true;
+    const n = ams.reduce((a, u) => a + u.slots.filter(Boolean).length, 0);
+    msg("amsMsg", "Synchronisé : " + n + " bobine" + (n > 1 ? "s" : "") + " lue" + (n > 1 ? "s" : "") + " sur ton imprimante et enregistrée" + (n > 1 ? "s" : "") + " dans ton compte.", "ok"); toast("AMS synchronisé.");
+  } catch (e) {
+    msg("amsMsg"); $("syncHelp").classList.remove("hidden"); $("syncHelp").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  } finally { b.disabled = false; b.classList.remove("syncing"); }
+};
+$("syncHelpClose").onclick = () => $("syncHelp").classList.add("hidden");
 window.addEventListener("beforeunload", e => { if (amsDirty) { e.preventDefault(); e.returnValue = ""; } });
 
 // onglets
