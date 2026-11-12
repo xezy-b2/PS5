@@ -697,11 +697,19 @@ async function identifySpool(hex, type) {
   return best;
 }
 
+// écart de couleur perçu (CIELAB, ΔE76) entre deux couleurs « #rrggbb »
+function filDE(a, b) {
+  const lab = h => { const v = [1, 3, 5].map(i => { let x = parseInt(h.slice(i, i + 2), 16) / 255; return x > 0.04045 ? ((x + 0.055) / 1.055) ** 2.4 : x / 12.92; });
+    const X = (v[0] * 0.4124 + v[1] * 0.3576 + v[2] * 0.1805) / 0.95047, Y = v[0] * 0.2126 + v[1] * 0.7152 + v[2] * 0.0722, Z = (v[0] * 0.0193 + v[1] * 0.1192 + v[2] * 0.9505) / 1.08883;
+    const F = t => t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116; return [116 * F(Y) - 16, 500 * (F(X) - F(Y)), 200 * (F(Y) - F(Z))]; };
+  const p = lab(a), q = lab(b); return Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
+}
+
 let ams = [], amsSel = null, amsDirty = false;      // ams : [{u:"A", slots:[{c,n}|null ×4]}]
 const UNITS = "ABCD";
 function amsFromMeta() {
   const m = meta(user).ams;
-  ams = Array.isArray(m) && m.length ? m.map(u => ({ u: u.u, slots: [0, 1, 2, 3].map(i => u.slots && u.slots[i] ? { c: u.slots[i].c, n: u.slots[i].n || "" } : null) })) : [{ u: "A", slots: [null, null, null, null] }];
+  ams = Array.isArray(m) && m.length ? m.map(u => ({ u: u.u, slots: [0, 1, 2, 3].map(i => u.slots && u.slots[i] ? { c: u.slots[i].c, n: u.slots[i].n || "", ...(u.slots[i].pc ? { pc: u.slots[i].pc } : {}) } : null) })) : [{ u: "A", slots: [null, null, null, null] }];
   amsSel = null; amsDirty = false; renderAms();
 }
 function setAmsDirty() { amsDirty = true; $("amsSave").disabled = false; msg("amsMsg"); }
@@ -755,7 +763,8 @@ function pickerFor(ui, si) {
   const s = ams[ui].slots[si], p = document.createElement("div"); p.className = "picker";
   p.innerHTML = '<div class="fpbox"></div><div class="pickfoot"><span class="pname"></span><label class="sub" style="display:flex;align-items:center;gap:8px;font-size:13px">Autre couleur <input type="color" value="' + (s ? s.c : "#ffffff") + '"></label><button class="btn sm" data-empty>Emplacement vide</button><button class="btn sm main" data-ok>OK</button></div>';
   p.querySelector(".pname").textContent = s ? (s.n || s.c) : "Choisis le filament de l'emplacement " + ams[ui].u + (si + 1);
-  const set = (c, n) => { ams[ui].slots[si] = { c, n }; setAmsDirty(); };
+  // on garde la couleur annoncée par l'imprimante (pc) : tant que la bobine ne change pas, ton choix reste aux synchros
+  const set = (c, n) => { const old = ams[ui].slots[si]; ams[ui].slots[si] = { c, n, ...(old && old.pc ? { pc: old.pc } : {}) }; setAmsDirty(); };
   renderFilPicker(p.querySelector(".fpbox"), { current: s && s.c, onHover: n => { p.querySelector(".pname").textContent = n; },
     onPick: (c, n) => { set(c, n); amsSel = si < 3 ? [ui, si + 1] : null; renderAms(); } });
   p.querySelector("input[type=color]").onchange = e => { set(e.target.value, BAMBU_NAME[e.target.value.toLowerCase()] || FIL_NAMES[e.target.value.toLowerCase()] || "Couleur libre " + e.target.value.toUpperCase()); renderAms(); };
@@ -794,10 +803,14 @@ $("amsSync").onclick = async () => {
     ams = await Promise.all(d.units.map(async u => ({ u: u.u, slots: await Promise.all(u.slots.map(async (s, i) => {
       if (!s) return null;
       const p = prev[u.u + i];
-      if (p && p.c.toLowerCase() === s.c.toLowerCase() && p.n && !/^(PLA|PETG|ABS|ASA|TPU|PA|PC)\b.* · #/i.test(p.n)) return { c: s.c, n: p.n };
+      const pc = s.c.toLowerCase();
+      if (p && p.n && !/ · #[0-9a-f]{6}$/i.test(p.n)) {
+        // même bobine qu'à la synchro précédente, ou choix fait à la main d'une couleur proche : on garde ton choix
+        if (p.pc ? p.pc === pc : filDE(p.c, pc) < 22) return { c: p.c, n: p.n, pc };
+      }
       const n = bambuOf(s) || await identifySpool(s.c, s.type);
       if (n) found++;
-      return { c: s.c, n: n || [s.brand || s.type, s.c.toUpperCase()].filter(Boolean).join(" · ") };
+      return { c: s.c, n: n || [s.brand || s.type, s.c.toUpperCase()].filter(Boolean).join(" · "), pc };
     })) })));
     amsSel = null; renderAms(); $("syncHelp").classList.add("hidden");
     const { data, error } = await sb.auth.updateUser({ data: { ams } });
