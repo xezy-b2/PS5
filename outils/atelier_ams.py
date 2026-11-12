@@ -83,7 +83,7 @@ def mqtt_loop(cfg):
             s.sendall(packet(0x82, struct.pack("!H", 1) + enc_str(topic) + b"\x00"))
             req = json.dumps({"pushing": {"sequence_id": "0", "command": "pushall"}}).encode()
             s.sendall(packet(0x30, enc_str("device/%s/request" % cfg["serial"]) + req))
-            print("✓ Connecté à l'imprimante %s. Laisse cette fenêtre ouverte pendant que tu utilises le site." % cfg["ip"])
+            print("✓ Connecté à l'imprimante %s." % cfg["ip"], flush=True)
             s.settimeout(30); last_ping = time.time()
             while True:
                 if time.time() - last_ping > 25: s.sendall(b"\xc0\x00"); last_ping = time.time()
@@ -95,7 +95,7 @@ def mqtt_loop(cfg):
                     except ValueError: pass
         except Exception as e:
             with lock: state["connected"] = False; state["error"] = str(e)
-            print("✗ Imprimante injoignable :", e, "· nouvel essai dans 10 s")
+            print("✗ Imprimante injoignable :", e, "· nouvel essai dans 10 s", flush=True)
             time.sleep(10)
 
 def payload():
@@ -130,10 +130,30 @@ class H(BaseHTTPRequestHandler):
         self.send_response(200); self.cors(); self.send_header("Content-Type", "application/json"); self.send_header("Cache-Control", "no-store"); self.end_headers(); self.wfile.write(data)
     def log_message(self, *a): pass
 
+def test_connection(cfg):
+    """Connexion d'essai : attend l'AMS jusqu'à 20 s et l'affiche."""
+    threading.Thread(target=mqtt_loop, args=(cfg,), daemon=True).start()
+    for _ in range(40):
+        time.sleep(0.5)
+        d = payload()
+        if d["units"]:
+            for u in d["units"]:
+                print("  AMS %s : %s" % (u["u"], ", ".join((s["type"] + " " + s["c"]) if s else "vide" for s in u["slots"])))
+            return True
+        if d["error"] and "refusée" in d["error"]: break
+    print("  ✗ Pas de réponse de l'AMS :", payload()["error"] or "délai dépassé")
+    return False
+
 if __name__ == "__main__":
+    if "--configure" in sys.argv:          # utilisé par l'installateur : configuration seule
+        ask_config(); sys.exit(0)
+    if "--test" in sys.argv:
+        print("Test de connexion à l'imprimante…"); sys.exit(0 if test_connection(load_config()) else 1)
+    if not os.path.exists(CONF) and not sys.stdin.isatty():
+        print("Pas encore configuré : lance l'installateur du pont AMS."); sys.exit(1)
     cfg = load_config()
     threading.Thread(target=mqtt_loop, args=(cfg,), daemon=True).start()
     print("Pont AMS prêt : sur le site, Mon compte → Mon AMS → « Synchroniser depuis l'imprimante ».")
     print("(Pour changer d'imprimante : relance avec --reset. Pour arrêter : ferme cette fenêtre.)\n")
     try: ThreadingHTTPServer(("127.0.0.1", PORT), H).serve_forever()
-    except OSError: print("Le pont est déjà lancé dans une autre fenêtre."); time.sleep(5)
+    except OSError: print("Le pont AMS tourne déjà (en arrière-plan ou dans une autre fenêtre) : rien à faire."); time.sleep(5)
