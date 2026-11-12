@@ -146,6 +146,10 @@
   .fchip.tr{background:linear-gradient(135deg,var(--c) 0 50%,color-mix(in srgb,var(--c) 45%,#fff) 50%)}
   .fchip.mu{background:conic-gradient(var(--c),#f2c94c,#56ccf2,#bb6bd9,var(--c))}
   .fp-msg{font-size:12.5px;color:var(--muted);margin:8px 0}
+  .fp-amschips{gap:10px}
+  .fp-slot{display:inline-flex;flex-direction:column;align-items:center;gap:2px}
+  .fp-slot b{font-size:10.5px;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums}
+  .fp-ams{color:var(--ink)!important}
 
   .pop h4{margin:12px 0 7px;font-size:12px;font-weight:650;color:var(--muted)}
   .pop h4:first-child{margin-top:0}
@@ -972,7 +976,11 @@ function renderFilPicker(box, opts) {
         loadFilaments().then(() => { fill(); render(); }).catch(() => { });     // relance la recherche une fois le catalogue chargé
       }
       html = hits.length ? '<h4>' + hits.length + ' résultat' + (hits.length > 1 ? "s" : "") + (hits.length > 160 ? " (160 premiers)" : "") + '</h4><div class="fchips">' + hits.slice(0, 160).map(([c, n, fl]) => filChip(c, n, opts.current, fl)).join("") + "</div>" : '<p class="fp-msg">Aucun filament trouvé.</p>';
-    } else for (const [g, items] of groupsOf(brand)) html += "<h4>" + filEsc(g) + '</h4><div class="fchips">' + items.map(([c, n, fl]) => filChip(c, n, opts.current, fl)).join("") + "</div>";
+    } else {
+      // tes bobines chargées dans l'AMS, toujours en premier
+      if (opts.ams && opts.ams.length) html += '<h4 class="fp-ams">Dans mon AMS</h4><div class="fchips fp-amschips">' + opts.ams.map(p => '<span class="fp-slot">' + filChip(p.c, p.id + " · " + (p.n || p.c.toUpperCase()), opts.current) + "<b>" + p.id + "</b></span>").join("") + "</div>";
+      for (const [g, items] of groupsOf(brand)) html += "<h4>" + filEsc(g) + '</h4><div class="fchips">' + items.map(([c, n, fl]) => filChip(c, n, opts.current, fl)).join("") + "</div>";
+    }
     list.innerHTML = html; wire();
   };
   sel.onchange = () => { brand = sel.value; try { localStorage.setItem("atelier-marque", brand); } catch (e) { } q.value = ""; render(); };
@@ -982,7 +990,23 @@ function renderFilPicker(box, opts) {
   render();
 }
 
-const bambuName = h => BAMBU_BY_HEX[(h || "").toLowerCase()] || FIL_NAMES[(h || "").toLowerCase()] || "";
+// Identifie une bobine lue sur l'imprimante (matière + couleur exacte) dans le catalogue des marques.
+// Renvoie « Marque · gamme · couleur », ou null si aucune correspondance exacte.
+async function identifySpool(hex, type) {
+  try { await loadFilaments(); } catch (e) { return null; }
+  const h = hex.toLowerCase(), t = (type || "").toLowerCase().replace(/[^a-z]/g, "");
+  let best = null, bestScore = -1;
+  for (const [b, list] of Object.entries(FIL_DB)) for (const [mat, line, name, hx] of list) {
+    if (hx !== h) continue;
+    const m = mat.toLowerCase().replace(/[^a-z]/g, "");
+    const score = !t ? 1 : m === t ? 3 : m.startsWith(t) ? 2 : 0;      // même matière d'abord (PLA ≠ PETG)
+    if (score > bestScore && (score > 0 || !t)) { bestScore = score; best = b + " · " + (line || mat) + " · " + name; }
+  }
+  return best;
+}
+
+// nom affiché d'une couleur : d'abord le nom de la bobine de ton AMS, puis la gamme Bambu, puis les autres marques
+const bambuName = h => { const k = (h || "").toLowerCase(), p = typeof amsPalette === "function" ? amsPalette().find(x => x.c === k) : null; return (p && p.n) || BAMBU_BY_HEX[k] || FIL_NAMES[k] || ""; };
 
 // =====================================================================================
 // Géométrie : coques et cadre de travail
@@ -1217,7 +1241,7 @@ function openPicker(anchor, current, cb) {
   popCb = cb;
   pop.innerHTML = '<div class="fpbox"></div><div class="hovername" id="popName"></div><div class="free">Couleur libre <input type="color" id="popFree" value="' + current + '"></div>';
   $("popName").textContent = bambuName(current) || "Couleur libre " + current;
-  renderFilPicker(pop.querySelector(".fpbox"), { current, onPick: c => { closePicker(); cb(c); }, onHover: n => { $("popName").textContent = n; } });
+  renderFilPicker(pop.querySelector(".fpbox"), { current, ams: amsPalette(), onPick: c => { closePicker(); cb(c); }, onHover: n => { $("popName").textContent = n; } });
   pop.classList.remove("hidden");
   const r = anchor.getBoundingClientRect();
   pop.style.left = Math.max(8, Math.min(window.innerWidth - pop.offsetWidth - 8, r.left)) + "px";
