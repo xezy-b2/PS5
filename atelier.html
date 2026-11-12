@@ -927,7 +927,7 @@ let amsUser = null;      // compte connecté (pour « Mon AMS »), renseigné pa
 // chargé seulement à la première ouverture d'une autre marque.
 let FIL_DB = null, FIL_DB_P = null;
 function loadFilaments() {
-  if (!FIL_DB_P) FIL_DB_P = fetch("filaments.json").then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(j => (FIL_DB = j.brands)).catch(e => { FIL_DB_P = null; throw e; });
+  if (!FIL_DB_P) FIL_DB_P = fetch("filaments.json?v=340cbd7e87").then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(j => (FIL_DB = j.brands)).catch(e => { FIL_DB_P = null; throw e; });
   return FIL_DB_P;
 }
 // noms des filaments choisis (pour afficher « Polymaker · PolyTerra PLA · Charcoal Black » à côté d'une couleur)
