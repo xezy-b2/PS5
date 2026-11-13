@@ -1207,8 +1207,13 @@ function renderSlots() {
   $("baseSw").style.background = S.baseColor; $("baseName").textContent = (amsIdOf(S.baseColor) ? "AMS " + amsIdOf(S.baseColor) + " · " : "") + bambuName(S.baseColor);
   renderFils();
 }
+let consoleRefreshT = 0;
+function refreshConsoleSoon() {
+  if ($("ccon").offsetParent === null) return;               // onglet Console fermé : mis à jour à l'ouverture
+  clearTimeout(consoleRefreshT); consoleRefreshT = setTimeout(updateConsoleDesign, 120);
+}
 function colorsChanged() {      // couleurs seulement : pas de nouvelle découpe nécessaire
-  renderSlots(); renderTexts(false); buildQuantCanvas(); draw2D(); repaintIfPossible(); updateUI(); markChange();
+  renderSlots(); renderTexts(false); buildQuantCanvas(); draw2D(); repaintIfPossible(); updateUI(); markChange(); refreshConsoleSoon();
 }
 function removeSlot(idx) {
   if (S.slots.length <= 1 || !S.labels) return;
@@ -1623,9 +1628,10 @@ function sideDesignCanvas(side) {
   let off = null;
   if (S.src === "side:" + side) off = [0, 0];
   else { const p = L.parts.find(q => q.id === S.src); if (p) off = p.t; }
-  if (!off || (!S.img && !S.texts.length)) return null;
+  if (!off) return null;
   const c = document.createElement("canvas"); c.width = Math.round(FW * K); c.height = Math.round(FH * K);
   const g = c.getContext("2d"), X = x => (x + off[0] + FW / 2) * K, Y = y => (FH / 2 - (y + off[1])) * K;
+  g.fillStyle = S.baseColor; g.fillRect(0, 0, c.width, c.height);      // couleur de la coque
   g.imageSmoothingEnabled = false;
   if (S.img && qcv) { g.save(); g.translate(X(S.rect.cx), Y(S.rect.cy)); g.rotate(-S.rect.rot); g.drawImage(qcv, -S.rect.w * K / 2, -S.rect.h * K / 2, S.rect.w * K, S.rect.h * K); g.restore(); }
   g.imageSmoothingEnabled = true;
@@ -1688,6 +1694,9 @@ function buildConsoleOverlay(kind) {
 function updateConsoleDesign() {
   const Mo = MODELS[S.console || "slim"];
   if (!Mo || !Mo.group) return;
+  // tranches et faces non couvertes : même couleur que la coque
+  if (!Mo.coverMats) { Mo.coverMats = new Set(); Mo.group.traverse(o => { if (o.isMesh && o.userData.coverPart) Mo.coverMats.add(o.material); }); }
+  for (const m of Mo.coverMats) m.color.set(S.baseColor);
   if (!Mo.overlay) buildConsoleOverlay(S.console || "slim");
   for (const mesh of Mo.overlay.children) {
     const cv = designFor(mesh.userData.side, mesh.userData.part);
