@@ -629,8 +629,12 @@ function rememberFilName(hex, name) {
   try { const k = Object.keys(FIL_NAMES); if (k.length > 400) delete FIL_NAMES[k[0]]; localStorage.setItem("atelier-noms-filaments", JSON.stringify(FIL_NAMES)); } catch (e) { }
 }
 const filEsc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
-function filChip(hex, label, cur, fl) {
-  return '<button type="button" class="fchip' + (cur && hex.toLowerCase() === cur.toLowerCase() ? " sel" : "") + (fl && fl.includes("t") ? " tr" : "") + (fl && fl.includes("m") ? " mu" : "") +
+// plusieurs filaments peuvent avoir le même code couleur (ex. PLA Basic Noir et PLA Matte Anthracite = #000000) :
+// si on connaît le nom choisi, seule la pastille portant ce nom est cochée
+let FIL_CUR_NAME = "";
+function filChip(hex, label, cur, fl, loose) {
+  const same = cur && hex.toLowerCase() === cur.toLowerCase() && (loose || !FIL_CUR_NAME || label === FIL_CUR_NAME);
+  return '<button type="button" class="fchip' + (same ? " sel" : "") + (fl && fl.includes("t") ? " tr" : "") + (fl && fl.includes("m") ? " mu" : "") +
     '" style="--c:' + hex + '" data-c="' + hex + '" data-n="' + filEsc(label) + '" title="' + filEsc(label) + '"></button>';
 }
 // rend le sélecteur dans `box` ; opts : { current, onPick(hex, nom), onHover(nom) }
@@ -654,6 +658,7 @@ function renderFilPicker(box, opts) {
     return [...g.entries()];
   };
   const render = () => {
+    FIL_CUR_NAME = opts.currentName || (opts.current && FIL_NAMES[opts.current.toLowerCase()]) || "";
     const term = q.value.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
     if (brand !== "Bambu Lab" && !FIL_DB) { list.innerHTML = '<p class="fp-msg">Chargement du catalogue…</p>'; loadFilaments().then(() => { fill(); render(); }).catch(() => { list.innerHTML = '<p class="fp-msg">Catalogue indisponible pour le moment.</p>'; }); return; }
     let html = "";
@@ -670,7 +675,7 @@ function renderFilPicker(box, opts) {
       html = hits.length ? '<h4>' + hits.length + ' résultat' + (hits.length > 1 ? "s" : "") + (hits.length > 160 ? " (160 premiers)" : "") + '</h4><div class="fchips">' + hits.slice(0, 160).map(([c, n, fl]) => filChip(c, n, opts.current, fl)).join("") + "</div>" : '<p class="fp-msg">Aucun filament trouvé.</p>';
     } else {
       // tes bobines chargées dans l'AMS, toujours en premier
-      if (opts.ams && opts.ams.length) html += '<h4 class="fp-ams">Dans mon AMS</h4><div class="fchips fp-amschips">' + opts.ams.map(p => '<span class="fp-slot">' + filChip(p.c, p.id + " · " + (p.n || p.c.toUpperCase()), opts.current) + "<b>" + p.id + "</b></span>").join("") + "</div>";
+      if (opts.ams && opts.ams.length) html += '<h4 class="fp-ams">Dans mon AMS</h4><div class="fchips fp-amschips">' + opts.ams.map(p => '<span class="fp-slot">' + filChip(p.c, p.id + " · " + (p.n || p.c.toUpperCase()), opts.current, null, true) + "<b>" + p.id + "</b></span>").join("") + "</div>";
       for (const [g, items] of groupsOf(brand)) html += "<h4>" + filEsc(g) + '</h4><div class="fchips">' + items.map(([c, n, fl]) => filChip(c, n, opts.current, fl)).join("") + "</div>";
     }
     list.innerHTML = html; wire();
@@ -765,7 +770,7 @@ function pickerFor(ui, si) {
   p.querySelector(".pname").textContent = s ? (s.n || s.c) : "Choisis le filament de l'emplacement " + ams[ui].u + (si + 1);
   // on garde la couleur annoncée par l'imprimante (pc) : tant que la bobine ne change pas, ton choix reste aux synchros
   const set = (c, n) => { const old = ams[ui].slots[si]; ams[ui].slots[si] = { c, n, ...(old && old.pc ? { pc: old.pc } : {}) }; setAmsDirty(); };
-  renderFilPicker(p.querySelector(".fpbox"), { current: s && s.c, onHover: n => { p.querySelector(".pname").textContent = n; },
+  renderFilPicker(p.querySelector(".fpbox"), { current: s && s.c, currentName: s && s.n, onHover: n => { p.querySelector(".pname").textContent = n; },
     onPick: (c, n) => { set(c, n); amsSel = si < 3 ? [ui, si + 1] : null; renderAms(); } });
   p.querySelector("input[type=color]").onchange = e => { set(e.target.value, BAMBU_NAME[e.target.value.toLowerCase()] || FIL_NAMES[e.target.value.toLowerCase()] || "Couleur libre " + e.target.value.toUpperCase()); renderAms(); };
   p.querySelector("[data-empty]").onclick = () => { ams[ui].slots[si] = null; setAmsDirty(); amsSel = null; renderAms(); };
